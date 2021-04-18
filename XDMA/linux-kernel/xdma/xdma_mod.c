@@ -23,15 +23,65 @@
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/aer.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 /* include early, to verify it depends only on the headers above */
 #include "libxdma_api.h"
 #include "libxdma.h"
 #include "xdma_mod.h"
 #include "xdma_cdev.h"
 #include "version.h"
+#include "control.h"
 
 #define DRV_MODULE_NAME		"xdma"
 #define DRV_MODULE_DESC		"Xilinx XDMA Reference Driver"
+
+#define CONTROL_DEV_NAME "vcamctl"
+#define VCAM_DEV_NAME "vcam"
+
+unsigned short devices_max = 8;
+unsigned short create_devices = 1;
+unsigned char allow_pix_conversion = 0;
+unsigned char allow_scaling = 0;
+
+module_param(devices_max, ushort, 0);
+MODULE_PARM_DESC(devices_max, "Maximal number of devices\n");
+
+module_param(create_devices, ushort, 0);
+MODULE_PARM_DESC(create_devices,
+                 "Number of devices to be created during initialization\n");
+
+module_param(allow_pix_conversion, byte, 0);
+MODULE_PARM_DESC(allow_pix_conversion,
+                 "Allow pixel format conversion by default\n");
+
+module_param(allow_scaling, byte, 0);
+MODULE_PARM_DESC(allow_scaling, "Allow image scaling by default\n");
+
+
+
+const char *vcam_dev_name = VCAM_DEV_NAME;
+
+static int vcam_create(void)
+{
+    int i;
+    int ret = create_control_device(CONTROL_DEV_NAME);
+    if (ret)
+        goto failure;
+
+    for (i = 0; i < create_devices; i++)
+        request_vcam_device(NULL);
+
+failure:
+    return ret;
+}
+
+static void vcam_delete(void)
+{
+    destroy_control_device();
+}
+
 
 static char version[] =
 	DRV_MODULE_DESC " " DRV_MODULE_NAME " v" DRV_MODULE_VERSION "\n";
@@ -366,6 +416,8 @@ static int xdma_mod_init(void)
 	if (rv < 0)
 		return rv;
 
+	vcam_create();
+
 	return pci_register_driver(&pci_driver);
 }
 
@@ -375,6 +427,8 @@ static void xdma_mod_exit(void)
 	dbg_init("pci_unregister_driver.\n");
 	pci_unregister_driver(&pci_driver);
 	xdma_cdev_cleanup();
+
+	vcam_delete();
 }
 
 module_init(xdma_mod_init);

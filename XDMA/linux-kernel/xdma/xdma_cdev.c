@@ -507,6 +507,7 @@ int xpdev_create_interfaces(struct xdma_pci_dev *xpdev)
 		}
 	}
 
+
 	for (i = 0; i < xpdev->c2h_channel_max; i++) {
 		engine = &xdev->engine_c2h[i];
 
@@ -521,6 +522,7 @@ int xpdev_create_interfaces(struct xdma_pci_dev *xpdev)
 		}
 	}
 	xpdev_flag_set(xpdev, XDF_CDEV_SG);
+	
 
 	/* Initialize Bypass Character Device */
 	if (xdev->bypass_bar_idx > 0) {
