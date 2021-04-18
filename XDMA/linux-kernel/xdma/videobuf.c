@@ -3,7 +3,8 @@
 #include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 #include <media/videobuf2-core.h>
-#include <media/videobuf2-vmalloc.h>
+//#include <media/videobuf2-vmalloc.h>
+#include <media/videobuf2-dma-sg.h>
 
 #include "videobuf.h"
 
@@ -121,7 +122,7 @@ static void vcam_out_buffer_queue(struct vb2_buffer *vb)
 static int vcam_start_streaming(struct vb2_queue *q, unsigned int count)
 {
     struct vcam_device *dev = q->drv_priv;
-    
+
     pr_info("vcam_start_streaming\n");
     /* Try to start kernel thread */
     dev->sub_thr_id = kthread_create(submitter_thread, dev, "vcam_submitter");
@@ -140,7 +141,7 @@ static void vcam_stop_streaming(struct vb2_queue *vb2_q)
     struct vcam_device *dev = vb2_q->drv_priv;
     struct vcam_out_queue *q = &dev->vcam_out_vidq;
     unsigned long flags = 0;
-
+    pr_info("vcam_stop_streaming\n");
     /* Stop running threads */
     if (dev->sub_thr_id)
         kthread_stop(dev->sub_thr_id);
@@ -190,7 +191,7 @@ int vcam_out_videobuf2_setup(struct vcam_device *dev)
     q->buf_struct_size = sizeof(struct vcam_out_buffer);
     q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
     q->ops = &vcam_vb2_ops;
-    q->mem_ops = &vb2_vmalloc_memops;
+    q->mem_ops = &vb2_dma_sg_memops;
     q->min_buffers_needed = 2;
     q->lock = &dev->vcam_mutex;
 

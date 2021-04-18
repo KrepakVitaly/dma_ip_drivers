@@ -4,11 +4,16 @@
 #include <linux/time.h>
 #include <linux/random.h>
 #include <media/videobuf2-core.h>
-#include <media/videobuf2-vmalloc.h>
+#include <media/videobuf2-dma-sg.h>
 
 #include "device.h"
 #include "fb.h"
 #include "videobuf.h"
+#include "control.h"
+#include "libxdma_api.h"
+#include "xdma_cdev.h"
+#include "cdev_sgdma.h"
+#include "xdma_thread.h"
 
 extern const char *vcam_dev_name;
 extern unsigned char allow_pix_conversion;
@@ -400,47 +405,53 @@ static inline void yuyv_to_rgb24_one_pix(void *dst,
     rgb[2] = (unsigned char) b;
 }
 
-static void submit_noinput_buffer(struct vcam_out_buffer *buf,
+
+
+static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
 {
-    int i, j;
-    int32_t yuyv_tmp;
-    unsigned char *yuyv_helper = (unsigned char *) &yuyv_tmp;
-    void *vbuf_ptr = vb2_plane_vaddr(&buf->vb, 0);
-    int32_t *yuyv_ptr = vbuf_ptr;
-    size_t size = dev->output_format.sizeimage;
-    size_t rowsize = dev->output_format.bytesperline;
-    size_t rows = dev->output_format.height;
+    struct xdma_cdev *xc = dev->xcdev;
 
-    int stripe_size = (rows / 255);
-    if (dev->output_format.pixelformat == V4L2_PIX_FMT_YUYV) {
-        yuyv_tmp = 0x80808080;
 
-        for (i = 0; i < 255; i++) {
-            yuyv_helper[0] = (unsigned char) i;
-            yuyv_helper[2] = (unsigned char) i;
-            for (j = 0; j < ((rowsize * stripe_size) >> 2); j++) {
-                *yuyv_ptr = yuyv_tmp;
-                yuyv_ptr++;
-            }
-        }
+	int rv;
+	ssize_t res = 0;
+	struct xdma_dev *xdev;
+	struct xdma_engine *engine;
+	//struct xdma_io_cb cb;
+    struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
 
-        yuyv_tmp = 0x80ff80ff;
-        while ((void *) yuyv_ptr < (void *) ((void *) vbuf_ptr + size)) {
-            *yuyv_ptr = yuyv_tmp;
-            yuyv_ptr++;
-        }
-    } else {
-        for (i = 0; i < 255; i++) {
-            int rand;
-            get_random_bytes(&rand, sizeof(rand));
-            memset(vbuf_ptr, rand, rowsize * stripe_size);
-            vbuf_ptr += rowsize * stripe_size;
-        }
+    //size_t count = 1;
+    loff_t *pos = NULL;
+    bool write = 0;
+	if (xc == NULL) {
+		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
+		return;
+	}
+    //size_t size = dev->output_format.sizeimage;
+    //size_t rowsize = dev->output_format.bytesperline;
+    //size_t rows = dev->output_format.height;
 
-        if (rows % 255)
-            memset(vbuf_ptr, 0xff, rowsize * (rows % 255));
+    rv = xcdev_check(__func__, xc, 1);
+	if (rv < 0){
+        pr_err("check engine failed\n");
+        return;
     }
+		
+	xdev = xc->xdev;
+    
+	engine = xc->engine;
+
+	if ((write && engine->dir != DMA_TO_DEVICE) ||
+	    (!write && engine->dir != DMA_FROM_DEVICE)) {
+		pr_err("r/w mismatch. W %d, dir %d.\n",
+			write, engine->dir);
+		return;
+	}
+
+	res = xdma_xfer_submit(xdev, engine->channel, write, *pos, vbuf_sgt,
+				0, write ? 10 * 1000 :
+					   10 * 1000);
+
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
@@ -650,7 +661,7 @@ int submitter_thread(void *data)
         spin_unlock_irqrestore(&dev->out_q_slock, flags);
 
         if (!dev->fb_isopen) {
-            submit_noinput_buffer(buf, dev);
+            submit_noinput_sg_buffer(buf, dev);
         } else {
             struct vcam_in_buffer *in_buf;
             spin_lock_irqsave(&dev->in_q_slock, flags);

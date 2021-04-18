@@ -78,6 +78,9 @@ struct vcam_device {
     /* Conversion switches */
     bool conv_pixfmt_on;
     bool conv_res_on;
+
+    /* xdma Xilinx device */
+    struct xdma_cdev * xcdev;
 };
 
 struct vcam_device *create_vcam_device(size_t idx,

@@ -20,6 +20,8 @@
 #define pr_fmt(fmt)     KBUILD_MODNAME ":%s: " fmt, __func__
 
 #include "xdma_cdev.h"
+#include "xdma_mod.h"
+#include "control.h"
 
 static struct class *g_xdma_class;
 
@@ -57,6 +59,54 @@ enum xpdev_flags_bits {
 	XDF_CDEV_SG,
 	XDF_CDEV_BYPASS,
 };
+
+#define CONTROL_DEV_NAME "vcamctl"
+#define VCAM_DEV_NAME "vcam"
+
+unsigned short devices_max = 8;
+unsigned short create_devices = 1;
+unsigned char allow_pix_conversion = 0;
+unsigned char allow_scaling = 0;
+
+module_param(devices_max, ushort, 0);
+MODULE_PARM_DESC(devices_max, "Maximal number of devices\n");
+
+module_param(create_devices, ushort, 0);
+MODULE_PARM_DESC(create_devices,
+                 "Number of devices to be created during initialization\n");
+
+module_param(allow_pix_conversion, byte, 0);
+MODULE_PARM_DESC(allow_pix_conversion,
+                 "Allow pixel format conversion by default\n");
+
+module_param(allow_scaling, byte, 0);
+MODULE_PARM_DESC(allow_scaling, "Allow image scaling by default\n");
+
+
+
+const char *vcam_dev_name = VCAM_DEV_NAME;
+
+static int vcam_create(struct xdma_cdev * xcdev)
+{
+    int i;
+    int ret = create_control_device(CONTROL_DEV_NAME);
+    if (ret)
+        goto failure;
+
+    for (i = 0; i < create_devices; i++)
+        request_vcam_device(NULL, xcdev);
+
+failure:
+    return ret;
+}
+
+static void vcam_delete(void)
+{
+    destroy_control_device();
+}
+
+
+
 
 static inline void xpdev_flag_set(struct xdma_pci_dev *xpdev,
 				enum xpdev_flags_bits fbit)
@@ -521,6 +571,9 @@ int xpdev_create_interfaces(struct xdma_pci_dev *xpdev)
 			goto fail;
 		}
 	}
+
+	vcam_create( &xpdev->sgdma_c2h_cdev[0]);
+
 	xpdev_flag_set(xpdev, XDF_CDEV_SG);
 	
 
@@ -626,6 +679,8 @@ int xdma_cdev_init(void)
 
 void xdma_cdev_cleanup(void)
 {
+	vcam_delete();
+	
 	if (cdev_cache)
 		kmem_cache_destroy(cdev_cache);
 

@@ -183,7 +183,7 @@ static long control_ioctl(struct file *file,
     switch (iocontrol_cmd) {
     case VCAM_IOCTL_CREATE_DEVICE:
         pr_debug("Requesing new device\n");
-        ret = request_vcam_device(&dev_spec);
+        ret = request_vcam_device(&dev_spec, NULL); // TODO: this is a bug
         break;
     case VCAM_IOCTL_DESTROY_DEVICE:
         pr_debug("Requesting removal of device\n");
@@ -216,7 +216,7 @@ static struct vcam_device_spec default_vcam_spec = {
     .pix_fmt = VCAM_PIXFMT_RGB24,
 };
 
-int request_vcam_device(struct vcam_device_spec *dev_spec)
+int request_vcam_device(struct vcam_device_spec *dev_spec, struct xdma_cdev * xcdev)
 {
     struct vcam_device *vcam;
     int idx;
@@ -236,6 +236,8 @@ int request_vcam_device(struct vcam_device_spec *dev_spec)
 
     if (!vcam)
         return -ENODEV;
+
+    vcam->xcdev = xcdev;
 
     spin_lock_irqsave(&ctldev->vcam_devices_lock, flags);
     idx = ctldev->vcam_device_count++;
