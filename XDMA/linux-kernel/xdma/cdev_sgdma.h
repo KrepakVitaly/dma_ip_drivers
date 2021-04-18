@@ -22,6 +22,19 @@
 
 #include <linux/ioctl.h>
 
+#include <linux/types.h>
+#include <asm/cacheflush.h>
+#include <linux/slab.h>
+#include <linux/aio.h>
+#include <linux/sched.h>
+#include <linux/wait.h>
+#include <linux/kthread.h>
+#include <linux/version.h>
+
+#include "libxdma_api.h"
+#include "xdma_cdev.h"
+#include "cdev_sgdma.h"
+#include "xdma_thread.h"
 
 #define IOCTL_XDMA_PERF_V1 (1)
 #define XDMA_ADDRMODE_MEMORY (0)
@@ -59,6 +72,10 @@ struct xdma_performance_ioctl {
 };
 
 
+ int check_transfer_align(struct xdma_engine *engine,
+	const char __user *buf, size_t count, loff_t pos, int sync);
+ void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write);
+ int char_sgdma_map_user_buf_to_sgl(struct xdma_io_cb *cb, bool write);
 
 /* IOCTL codes */
 

@@ -45,7 +45,7 @@ module_param(c2h_timeout, uint, 0644);
 MODULE_PARM_DESC(c2h_timeout, "C2H sgdma timeout in seconds, default is 10 sec.");
 
 extern struct kmem_cache *cdev_cache;
-static void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write);
+// void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write);
 
 
 static void async_io_handler(unsigned long  cb_hndl, int err)
@@ -176,7 +176,7 @@ static loff_t char_sgdma_llseek(struct file *file, loff_t off, int whence)
  * to wake us on completion.
  */
 
-static int check_transfer_align(struct xdma_engine *engine,
+ int check_transfer_align(struct xdma_engine *engine,
 	const char __user *buf, size_t count, loff_t pos, int sync)
 {
 	if (!engine) {
@@ -244,7 +244,7 @@ static inline void xdma_io_cb_release(struct xdma_io_cb *cb)
 	memset(cb, 0, sizeof(*cb));
 }
 
-static void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write)
+ void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write)
 {
 	int i;
 
@@ -269,7 +269,7 @@ static void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write)
 	cb->pages = NULL;
 }
 
-static int char_sgdma_map_user_buf_to_sgl(struct xdma_io_cb *cb, bool write)
+ int char_sgdma_map_user_buf_to_sgl(struct xdma_io_cb *cb, bool write)
 {
 	struct sg_table *sgt = &cb->sgt;
 	unsigned long len = cb->len;

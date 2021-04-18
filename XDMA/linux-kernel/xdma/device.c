@@ -418,34 +418,70 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
     size_t rows = dev->output_format.height;
 
     int stripe_size = (rows / 255);
-    if (dev->output_format.pixelformat == V4L2_PIX_FMT_YUYV) {
-        yuyv_tmp = 0x80808080;
 
-        for (i = 0; i < 255; i++) {
-            yuyv_helper[0] = (unsigned char) i;
-            yuyv_helper[2] = (unsigned char) i;
-            for (j = 0; j < ((rowsize * stripe_size) >> 2); j++) {
-                *yuyv_ptr = yuyv_tmp;
-                yuyv_ptr++;
-            }
-        }
+    // for (i = 0; i < 255; i++) {
+    //     int rand;
+    //     get_random_bytes(&rand, sizeof(rand));
+    //     memset(vbuf_ptr, rand, rowsize * stripe_size);
+    //     vbuf_ptr += rowsize * stripe_size;
+    // }
 
-        yuyv_tmp = 0x80ff80ff;
-        while ((void *) yuyv_ptr < (void *) ((void *) vbuf_ptr + size)) {
-            *yuyv_ptr = yuyv_tmp;
-            yuyv_ptr++;
-        }
-    } else {
-        for (i = 0; i < 255; i++) {
-            int rand;
-            get_random_bytes(&rand, sizeof(rand));
-            memset(vbuf_ptr, rand, rowsize * stripe_size);
-            vbuf_ptr += rowsize * stripe_size;
-        }
+    // if (rows % 255)
+    //     memset(vbuf_ptr, 0xff, rowsize * (rows % 255));
 
-        if (rows % 255)
-            memset(vbuf_ptr, 0xff, rowsize * (rows % 255));
-    }
+    char __user *buf_user = (char*) vbuf_ptr;
+    size_t count = size;
+    loff_t pos = 0;
+    bool write = 0;
+
+	int rv;
+	ssize_t res = 0;
+	struct xdma_cdev *xcdev = dev->xcdev;
+	struct xdma_dev *xdev;
+	struct xdma_engine *engine;
+	struct xdma_io_cb cb;
+
+	rv = xcdev_check(__func__, xcdev, 1);
+	if (rv < 0)
+		return rv;
+	xdev = xcdev->xdev;
+	engine = xcdev->engine;
+
+	dbg_tfr("file 0x%p, priv 0x%p, buf 0x%p,%llu, pos %llu, W %d, %s.\n",
+		NULL, xcdev, buf_user, (u64)count, (u64)pos, write,
+		engine->name);
+
+	if ((write && engine->dir != DMA_TO_DEVICE) ||
+	    (!write && engine->dir != DMA_FROM_DEVICE)) {
+		pr_err("r/w mismatch. W %d, dir %d.\n",
+			write, engine->dir);
+		return;// -EINVAL;
+	}
+
+	rv = check_transfer_align(engine, buf_user, count, pos, 1);
+	if (rv) {
+		pr_info("Invalid transfer alignment detected\n");
+		return;// rv;
+	}
+
+	memset(&cb, 0, sizeof(struct xdma_io_cb));
+	cb.buf = (char __user *)buf_user;
+	cb.len = count;
+	cb.ep_addr = (u64)pos;
+	cb.write = write;
+	rv = char_sgdma_map_user_buf_to_sgl(&cb, write);
+	if (rv < 0)
+		return;// rv;
+
+	res = xdma_xfer_submit(xdev, engine->channel, write, pos, &cb.sgt,
+				0, write ? h2c_timeout * 1000 :
+					   c2h_timeout * 1000);
+
+	char_sgdma_unmap_user_buf(&cb, write);
+
+	return;// res;
+
+
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
