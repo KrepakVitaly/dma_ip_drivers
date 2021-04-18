@@ -408,26 +408,10 @@ static inline void yuyv_to_rgb24_one_pix(void *dst,
 static void submit_noinput_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
 {
-    int i, j;
-    int32_t yuyv_tmp;
-    unsigned char *yuyv_helper = (unsigned char *) &yuyv_tmp;
     void *vbuf_ptr = vb2_plane_vaddr(&buf->vb, 0);
-    int32_t *yuyv_ptr = vbuf_ptr;
+
     size_t size = dev->output_format.sizeimage;
-    size_t rowsize = dev->output_format.bytesperline;
-    size_t rows = dev->output_format.height;
 
-    int stripe_size = (rows / 255);
-
-    // for (i = 0; i < 255; i++) {
-    //     int rand;
-    //     get_random_bytes(&rand, sizeof(rand));
-    //     memset(vbuf_ptr, rand, rowsize * stripe_size);
-    //     vbuf_ptr += rowsize * stripe_size;
-    // }
-
-    // if (rows % 255)
-    //     memset(vbuf_ptr, 0xff, rowsize * (rows % 255));
 
     char __user *buf_user = (char*) vbuf_ptr;
     size_t count = size;
@@ -443,12 +427,12 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 
 	rv = xcdev_check(__func__, xcdev, 1);
 	if (rv < 0)
-		return rv;
+		return;// rv;
 	xdev = xcdev->xdev;
 	engine = xcdev->engine;
 
-	dbg_tfr("file 0x%p, priv 0x%p, buf 0x%p,%llu, pos %llu, W %d, %s.\n",
-		NULL, xcdev, buf_user, (u64)count, (u64)pos, write,
+	dbg_tfr("vbuf_ptr 0x%p, priv 0x%p, buf 0x%p,%llu, pos %llu, W %d, %s.\n",
+		vbuf_ptr, xcdev, buf_user, (u64)count, (u64)pos, write,
 		engine->name);
 
 	if ((write && engine->dir != DMA_TO_DEVICE) ||
@@ -486,6 +470,8 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
 }
+
+
 
 static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
@@ -741,7 +727,7 @@ int submitter_thread(void *data)
         spin_unlock_irqrestore(&dev->out_q_slock, flags);
 
         if (!dev->fb_isopen) {
-            submit_noinput_buffer(buf, dev);
+            submit_noinput_sg_buffer(buf, dev);
         } else {
             struct vcam_in_buffer *in_buf;
             spin_lock_irqsave(&dev->in_q_slock, flags);

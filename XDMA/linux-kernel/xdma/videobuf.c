@@ -3,7 +3,7 @@
 #include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 #include <media/videobuf2-core.h>
-#include <media/videobuf2-vmalloc.h>
+//#include <media/videobuf2-vmalloc.h>
 #include <media/videobuf2-dma-sg.h>
 
 #include "videobuf.h"
@@ -191,7 +191,7 @@ int vcam_out_videobuf2_setup(struct vcam_device *dev)
     q->buf_struct_size = sizeof(struct vcam_out_buffer);
     q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
     q->ops = &vcam_vb2_ops;
-    q->mem_ops = &vb2_vmalloc_memops;
+    q->mem_ops = &vb2_dma_sg_memops;
     q->min_buffers_needed = 2;
     q->lock = &dev->vcam_mutex;
 
