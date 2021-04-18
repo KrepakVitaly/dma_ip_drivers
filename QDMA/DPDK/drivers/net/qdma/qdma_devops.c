@@ -1,7 +1,7 @@
 /*-
  * BSD LICENSE
  *
- * Copyright(c) 2017-2020 Xilinx, Inc. All rights reserved.
+ * Copyright(c) 2017-2021 Xilinx, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -169,7 +169,10 @@ int qdma_pf_csr_read(struct rte_eth_dev *dev)
 					  "returned %d", ret);
 	}
 
-	return qdma_dev->hw_access->qdma_get_error_code(ret);
+	if (ret < 0)
+		return qdma_dev->hw_access->qdma_get_error_code(ret);
+
+	return ret;
 }
 
 static int qdma_pf_fmap_prog(struct rte_eth_dev *dev)
@@ -185,7 +188,7 @@ static int qdma_pf_fmap_prog(struct rte_eth_dev *dev)
 	fmap_cfg.qmax = qdma_dev->qsets_en;
 	ret = qdma_dev->hw_access->qdma_fmap_conf(dev,
 			qdma_dev->func_id, &fmap_cfg, QDMA_HW_ACCESS_WRITE);
-	if (ret != QDMA_SUCCESS)
+	if (ret < 0)
 		return qdma_dev->hw_access->qdma_get_error_code(ret);
 
 	return ret;
@@ -420,6 +423,28 @@ int qdma_dev_rx_queue_setup(struct rte_eth_dev *dev, uint16_t rx_queue_id,
 	if (qdma_dev->q_info[rx_queue_id].rx_bypass_mode ==
 			RTE_PMD_QDMA_RX_BYPASS_SIMPLE)
 		rxq->en_bypass_prefetch = 1;
+
+	if (qdma_dev->ip_type == EQDMA_SOFT_IP &&
+			qdma_dev->vivado_rel >= QDMA_VIVADO_2020_2) {
+		if (qdma_dev->dev_cap.desc_eng_mode ==
+				QDMA_DESC_ENG_BYPASS_ONLY) {
+			PMD_DRV_LOG(ERR,
+				"Bypass only mode design "
+				"is not supported\n");
+			return -ENOTSUP;
+		}
+
+		if (rxq->en_bypass &&
+				(qdma_dev->dev_cap.desc_eng_mode ==
+				QDMA_DESC_ENG_INTERNAL_ONLY)) {
+			PMD_DRV_LOG(ERR,
+				"Rx qid %d config in bypass "
+				"mode not supported on "
+				"internal only mode design\n",
+				rx_queue_id);
+			return -ENOTSUP;
+		}
+	}
 
 	if (rxq->en_bypass) {
 		rxq->bypass_desc_sz =
@@ -753,6 +778,28 @@ int qdma_dev_tx_queue_setup(struct rte_eth_dev *dev, uint16_t tx_queue_id,
 		goto tx_setup_err;
 	}
 
+	if (qdma_dev->ip_type == EQDMA_SOFT_IP &&
+			qdma_dev->vivado_rel >= QDMA_VIVADO_2020_2) {
+		if (qdma_dev->dev_cap.desc_eng_mode ==
+				QDMA_DESC_ENG_BYPASS_ONLY) {
+			PMD_DRV_LOG(ERR,
+				"Bypass only mode design "
+				"is not supported\n");
+			return -ENOTSUP;
+		}
+
+		if (txq->en_bypass &&
+				(qdma_dev->dev_cap.desc_eng_mode ==
+				QDMA_DESC_ENG_INTERNAL_ONLY)) {
+			PMD_DRV_LOG(ERR,
+				"Tx qid %d config in bypass "
+				"mode not supported on "
+				"internal only mode design\n",
+				tx_queue_id);
+			return -ENOTSUP;
+		}
+	}
+
 	/* Allocate memory for TX descriptor ring */
 	if (txq->st_mode) {
 		if (!qdma_dev->dev_cap.st_en) {
@@ -829,7 +876,7 @@ int qdma_dev_tx_queue_setup(struct rte_eth_dev *dev, uint16_t tx_queue_id,
 	}
 
 	PMD_DRV_LOG(INFO, "Tx ring phys addr: 0x%lX, Tx Ring virt addr: 0x%lX",
-	    (uint64_t)txq->tx_mz->phys_addr, (uint64_t)txq->tx_ring);
+	    (uint64_t)txq->tx_mz->iova, (uint64_t)txq->tx_ring);
 
 	/* Allocate memory for TX software ring */
 	sz = txq->nb_tx_desc * sizeof(struct rte_mbuf *);
@@ -1066,7 +1113,7 @@ int qdma_dev_infos_get(struct rte_eth_dev *dev,
  * @param dev
  *   Pointer to Ethernet device structure.
  */
-void qdma_dev_stop(struct rte_eth_dev *dev)
+int qdma_dev_stop(struct rte_eth_dev *dev)
 {
 #ifdef RTE_LIBRTE_QDMA_DEBUG_DRIVER
 	struct qdma_pci_dev *qdma_dev = dev->data->dev_private;
@@ -1086,6 +1133,7 @@ void qdma_dev_stop(struct rte_eth_dev *dev)
 	rte_eal_alarm_cancel(qdma_txq_pidx_update, (void *)dev);
 #endif
 
+	return 0;
 }
 
 /**
@@ -1096,7 +1144,7 @@ void qdma_dev_stop(struct rte_eth_dev *dev)
  * @param dev
  *   Pointer to Ethernet device structure.
  */
-void qdma_dev_close(struct rte_eth_dev *dev)
+int qdma_dev_close(struct rte_eth_dev *dev)
 {
 	struct qdma_pci_dev *qdma_dev = dev->data->dev_private;
 	struct qdma_tx_queue *txq;
@@ -1104,6 +1152,7 @@ void qdma_dev_close(struct rte_eth_dev *dev)
 	struct qdma_cmpt_queue *cmptq;
 	uint32_t qid;
 	struct qdma_fmap_cfg fmap_cfg;
+	int ret = 0;
 
 	PMD_DRV_LOG(INFO, "PF-%d(DEVFN) DEV Close\n", qdma_dev->func_id);
 
@@ -1189,12 +1238,24 @@ void qdma_dev_close(struct rte_eth_dev *dev)
 		}
 	}
 	qdma_dev->qsets_en = 0;
-	qdma_dev_update(qdma_dev->dma_device_index, qdma_dev->func_id,
+	ret = qdma_dev_update(qdma_dev->dma_device_index, qdma_dev->func_id,
 			qdma_dev->qsets_en, (int *)&qdma_dev->queue_base);
+	if (ret != QDMA_SUCCESS) {
+		PMD_DRV_LOG(ERR, "PF-%d(DEVFN) qmax update failed: %d\n",
+			qdma_dev->func_id, ret);
+		return 0;
+	}
+
 	qdma_dev->init_q_range = 0;
 	rte_free(qdma_dev->q_info);
 	qdma_dev->q_info = NULL;
 	qdma_dev->dev_configured = 0;
+
+	/* cancel pending polls*/
+	if (qdma_dev->is_master)
+		rte_eal_alarm_cancel(qdma_check_errors, (void *)dev);
+
+	return 0;
 }
 
 /**
@@ -1441,7 +1502,7 @@ int qdma_dev_tx_queue_start(struct rte_eth_dev *dev, uint16_t qid)
 	q_sw_ctxt.rngsz_idx = txq->ringszidx;
 	q_sw_ctxt.bypass = txq->en_bypass;
 	q_sw_ctxt.wbk_en = 1;
-	q_sw_ctxt.ring_bs_addr = (uint64_t)txq->tx_mz->phys_addr;
+	q_sw_ctxt.ring_bs_addr = (uint64_t)txq->tx_mz->iova;
 
 	if (txq->en_bypass &&
 		(txq->bypass_desc_sz != 0))
@@ -1451,7 +1512,7 @@ int qdma_dev_tx_queue_start(struct rte_eth_dev *dev, uint16_t qid)
 	err = hw_access->qdma_sw_ctx_conf(dev, 0,
 			(qid + queue_base), &q_sw_ctxt,
 			QDMA_HW_ACCESS_WRITE);
-	if (err != QDMA_SUCCESS)
+	if (err < 0)
 		return qdma_dev->hw_access->qdma_get_error_code(err);
 
 	txq->q_pidx_info.pidx = 0;
@@ -1527,7 +1588,7 @@ int qdma_dev_rx_queue_start(struct rte_eth_dev *dev, uint16_t qid)
 		q_cmpt_ctxt.timer_idx = rxq->timeridx;
 		q_cmpt_ctxt.color = CMPT_DEFAULT_COLOR_BIT;
 		q_cmpt_ctxt.ringsz_idx = rxq->cmpt_ringszidx;
-		q_cmpt_ctxt.bs_addr = (uint64_t)rxq->rx_cmpt_mz->phys_addr;
+		q_cmpt_ctxt.bs_addr = (uint64_t)rxq->rx_cmpt_mz->iova;
 		q_cmpt_ctxt.desc_sz = cmpt_desc_fmt;
 		q_cmpt_ctxt.valid = 1;
 		if (qdma_dev->dev_cap.cmpt_ovf_chk_dis)
@@ -1548,7 +1609,7 @@ int qdma_dev_rx_queue_start(struct rte_eth_dev *dev, uint16_t qid)
 	q_sw_ctxt.rngsz_idx = rxq->ringszidx;
 	q_sw_ctxt.bypass = rxq->en_bypass;
 	q_sw_ctxt.wbk_en = 1;
-	q_sw_ctxt.ring_bs_addr = (uint64_t)rxq->rx_mz->phys_addr;
+	q_sw_ctxt.ring_bs_addr = (uint64_t)rxq->rx_mz->iova;
 
 	if (rxq->en_bypass &&
 		(rxq->bypass_desc_sz != 0))
@@ -1557,20 +1618,20 @@ int qdma_dev_rx_queue_start(struct rte_eth_dev *dev, uint16_t qid)
 	/* Set SW Context */
 	err = hw_access->qdma_sw_ctx_conf(dev, 1, (qid + queue_base),
 			&q_sw_ctxt, QDMA_HW_ACCESS_WRITE);
-	if (err != QDMA_SUCCESS)
+	if (err < 0)
 		return qdma_dev->hw_access->qdma_get_error_code(err);
 
 	if (rxq->st_mode) {
 		/* Set Prefetch Context */
 		err = hw_access->qdma_pfetch_ctx_conf(dev, (qid + queue_base),
 				&q_prefetch_ctxt, QDMA_HW_ACCESS_WRITE);
-		if (err != QDMA_SUCCESS)
+		if (err < 0)
 			return qdma_dev->hw_access->qdma_get_error_code(err);
 
 		/* Set Completion Context */
 		err = hw_access->qdma_cmpt_ctx_conf(dev, (qid + queue_base),
 				&q_cmpt_ctxt, QDMA_HW_ACCESS_WRITE);
-		if (err != QDMA_SUCCESS)
+		if (err < 0)
 			return qdma_dev->hw_access->qdma_get_error_code(err);
 
 		rte_wmb();
@@ -1707,26 +1768,37 @@ int
 qdma_dev_get_regs(struct rte_eth_dev *dev,
 	      struct rte_dev_reg_info *regs)
 {
+	struct qdma_pci_dev *qdma_dev = dev->data->dev_private;
 	uint32_t *data = regs->data;
-	uint32_t count = 0;
-	uint32_t reg_length = (sizeof(qdma_config_regs) /
-				sizeof(qdma_config_regs[0])) - 1;
+	uint32_t reg_length = 0;
+	int ret = 0;
+
+	ret = qdma_acc_get_num_config_regs(dev,
+				(enum qdma_ip_type)qdma_dev->ip_type,
+				&reg_length);
+	if (ret < 0 || reg_length == 0) {
+		PMD_DRV_LOG(ERR, "%s: Failed to get number of config registers\n",
+				__func__);
+		return ret;
+	}
 
 	if (data == NULL) {
-		regs->length = reg_length;
+		regs->length = reg_length - 1;
 		regs->width = sizeof(uint32_t);
 		return 0;
 	}
 
 	/* Support only full register dump */
 	if ((regs->length == 0) ||
-	    (regs->length == reg_length)) {
+	    (regs->length == (reg_length - 1))) {
 		regs->version = 1;
-		for (count = 0; count < reg_length; count++) {
-			data[count] = qdma_reg_read(dev,
-					qdma_config_regs[count].addr);
+		ret = qdma_acc_get_config_regs(dev, qdma_dev->is_vf,
+			(enum qdma_ip_type)qdma_dev->ip_type, data);
+		if (ret < 0) {
+			PMD_DRV_LOG(ERR, "%s: Failed to get config registers\n",
+					__func__);
 		}
-		return 0;
+		return ret;
 	}
 
 	PMD_DRV_LOG(ERR, "%s: Unsupported length (0x%x) requested\n",
@@ -1943,9 +2015,6 @@ static struct eth_dev_ops qdma_eth_dev_ops = {
 	.rx_queue_stop            = qdma_dev_rx_queue_stop,
 	.tx_queue_start           = qdma_dev_tx_queue_start,
 	.tx_queue_stop            = qdma_dev_tx_queue_stop,
-	.rx_queue_count           = qdma_dev_rx_queue_count,
-	.rx_descriptor_status     = qdma_dev_rx_descriptor_status,
-	.tx_descriptor_status     = qdma_dev_tx_descriptor_status,
 	.tx_done_cleanup          = qdma_dev_tx_done_cleanup,
 	.queue_stats_mapping_set  = qdma_dev_queue_stats_mapping,
 	.get_reg                  = qdma_dev_get_regs,
@@ -1961,5 +2030,8 @@ void qdma_dev_ops_init(struct rte_eth_dev *dev)
 	if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
 		dev->rx_pkt_burst = &qdma_recv_pkts;
 		dev->tx_pkt_burst = &qdma_xmit_pkts;
+		dev->rx_queue_count = &qdma_dev_rx_queue_count;
+		dev->rx_descriptor_status = &qdma_dev_rx_descriptor_status;
+		dev->tx_descriptor_status = &qdma_dev_tx_descriptor_status;
 	}
 }

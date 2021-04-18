@@ -108,6 +108,10 @@ static const struct pci_device_id pci_ids[] = {
 #ifdef INTERNAL_TESTING
 	{ PCI_DEVICE(0x1d0f, 0x1042), 0},
 #endif
+	/* aws */
+	{ PCI_DEVICE(0x1d0f, 0xf000), },
+	{ PCI_DEVICE(0x1d0f, 0xf001), },
+
 	{0,}
 };
 MODULE_DEVICE_TABLE(pci, pci_ids);
@@ -289,7 +293,11 @@ static void xdma_error_resume(struct pci_dev *pdev)
 	struct xdma_pci_dev *xpdev = dev_get_drvdata(&pdev->dev);
 
 	pr_info("dev 0x%p,0x%p.\n", pdev, xpdev);
+#if KERNEL_VERSION(5, 7, 0) <= LINUX_VERSION_CODE
+	pci_aer_clear_nonfatal_status(pdev);
+#else
 	pci_cleanup_aer_uncorrect_error_status(pdev);
+#endif
 }
 
 #if KERNEL_VERSION(4, 13, 0) <= LINUX_VERSION_CODE
@@ -343,7 +351,7 @@ static struct pci_driver pci_driver = {
 	.err_handler = &xdma_err_handler,
 };
 
-static int __init xdma_mod_init(void)
+static int xdma_mod_init(void)
 {
 	int rv;
 
@@ -351,8 +359,8 @@ static int __init xdma_mod_init(void)
 
 	if (desc_blen_max > XDMA_DESC_BLEN_MAX)
 		desc_blen_max = XDMA_DESC_BLEN_MAX;
-	pr_info("desc_blen_max: 0x%x/%u, sgdma_timeout: %u sec.\n",
-		desc_blen_max, desc_blen_max, sgdma_timeout);
+	pr_info("desc_blen_max: 0x%x/%u, timeout: h2c %u c2h %u sec.\n",
+		desc_blen_max, desc_blen_max, h2c_timeout, c2h_timeout);
 
 	rv = xdma_cdev_init();
 	if (rv < 0)
@@ -361,7 +369,7 @@ static int __init xdma_mod_init(void)
 	return pci_register_driver(&pci_driver);
 }
 
-static void __exit xdma_mod_exit(void)
+static void xdma_mod_exit(void)
 {
 	/* unregister this driver from the PCI bus driver */
 	dbg_init("pci_unregister_driver.\n");

@@ -1,7 +1,7 @@
 /*-
  * BSD LICENSE
  *
- * Copyright(c) 2019-2020 Xilinx, Inc. All rights reserved.
+ * Copyright(c) 2019-2021 Xilinx, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -259,6 +259,12 @@ struct rte_pmd_qdma_dev_attributes {
 	uint8_t mm_cmpt_en:1;
 	/** Indicates whether Mailbox supported or not */
 	uint8_t mailbox_en:1;
+	/** Debug mode is enabled/disabled for IP */
+	uint8_t debug_mode:1;
+	/** Descriptor Engine mode:
+	 * Internal only/Bypass only/Internal & Bypass
+	 */
+	uint8_t desc_eng_mode:2;
 	/** Number of MM channels */
 	uint8_t mm_channel_max;
 
@@ -297,6 +303,21 @@ struct rte_pmd_qdma_dev_attributes {
  * @ingroup rte_pmd_qdma_func
  ******************************************************************************/
 int rte_pmd_qdma_dbg_regdump(uint8_t port_id);
+
+/******************************************************************************/
+/**
+ * Dumps the QDMA register field information for a given register offset
+ *
+ * @param	port_id Port ID
+ * @param	reg_addr Register Address
+ *
+ * @return	'0' on success and "< 0" on failure
+ *
+ * @note	None
+ * @ingroup rte_pmd_qdma_func
+ ******************************************************************************/
+int rte_pmd_qdma_dbg_reg_info_dump(uint8_t port_id,
+			uint32_t num_regs, uint32_t reg_addr);
 
 /******************************************************************************/
 /**
@@ -350,8 +371,8 @@ int rte_pmd_qdma_dbg_qdesc(uint8_t port_id, uint16_t queue, int start,
  *
  * @param	port_id Port ID
  * @param	config_bar_idx Config BAR index
- * @param	user_bar_idx   User BAR index
- * @param	bypass_bar_idx Bypass BAR index
+ * @param	user_bar_idx   AXI Master Lite BAR(user bar) index
+ * @param	bypass_bar_idx AXI Bridge Master BAR(bypass bar) index
  *
  * @return	'0' on success and '< 0' on failure
  *
@@ -699,6 +720,18 @@ int rte_pmd_qdma_dev_cmptq_stop(int port_id, uint32_t qid);
  ******************************************************************************/
 uint16_t rte_pmd_qdma_mm_cmpt_process(int port_id, uint32_t qid,
 		void *cmpt_buff, uint16_t nb_entries);
+
+/*****************************************************************************/
+/**
+ * DPDK PMD function to close the device.
+ *
+ * @param   port_id Port ID
+ *
+ * @return  '0' on success and '< 0' on failure
+ *
+ ******************************************************************************/
+int rte_pmd_qdma_dev_close(uint16_t port_id);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,7 +1,7 @@
 /*-
  * BSD LICENSE
  *
- * Copyright(c) 2019-2020 Xilinx, Inc. All rights reserved.
+ * Copyright(c) 2019-2021 Xilinx, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,6 +50,7 @@
 #include "qdma.h"
 #include "qdma_access_common.h"
 #include "rte_pmd_qdma.h"
+#include "qdma_devops.h"
 
 
 static int validate_qdma_dev_info(int port_id, uint16_t qid)
@@ -120,8 +121,8 @@ static int8_t qdma_get_trigger_mode(enum rte_pmd_qdma_tigger_mode_t mode)
  *
  * @param	port_id : Port ID
  * @param	config_bar_idx : Config BAR index
- * @param	user_bar_idx   : User BAR index
- * @param	bypass_bar_idx : Bypass BAR index
+ * @param	user_bar_idx   : AXI Master Lite BAR(user bar) index
+ * @param	bypass_bar_idx : AXI Bridge Master BAR(bypass bar) index
  *
  * @return	'0' on success and '< 0' on failure.
  *
@@ -1147,6 +1148,8 @@ int rte_pmd_qdma_get_device_capabilities(int port_id,
 	dev_attr->mm_cmpt_en = qdma_dev->dev_cap.mm_cmpt_en;
 	dev_attr->mailbox_en = qdma_dev->dev_cap.mailbox_en;
 	dev_attr->mm_channel_max = qdma_dev->dev_cap.mm_channel_max;
+	dev_attr->debug_mode = qdma_dev->dev_cap.debug_mode;
+	dev_attr->desc_eng_mode = qdma_dev->dev_cap.desc_eng_mode;
 	dev_attr->cmpt_ovf_chk_dis = qdma_dev->dev_cap.cmpt_ovf_chk_dis;
 	dev_attr->sw_desc_64b = qdma_dev->dev_cap.sw_desc_64b;
 	dev_attr->cmpt_desc_64b = qdma_dev->dev_cap.cmpt_desc_64b;
@@ -1418,7 +1421,7 @@ static int qdma_vf_cmptq_context_write(struct rte_eth_dev *dev, uint16_t qid)
 	descq_conf.irq_en = 0;
 	descq_conf.desc_sz = SW_DESC_CNTXT_MEMORY_MAP_DMA;
 	descq_conf.forced_en = 1;
-	descq_conf.cmpt_ring_bs_addr = cmptq->cmpt_mz->phys_addr;
+	descq_conf.cmpt_ring_bs_addr = cmptq->cmpt_mz->iova;
 	descq_conf.cmpt_desc_sz = cmpt_desc_fmt;
 	descq_conf.triggermode = cmptq->triggermode;
 
@@ -1502,7 +1505,7 @@ static int qdma_pf_cmptq_context_write(struct rte_eth_dev *dev, uint32_t qid)
 	q_cmpt_ctxt.timer_idx = cmptq->timeridx;
 	q_cmpt_ctxt.color = CMPT_DEFAULT_COLOR_BIT;
 	q_cmpt_ctxt.ringsz_idx = cmptq->ringszidx;
-	q_cmpt_ctxt.bs_addr = (uint64_t)cmptq->cmpt_mz->phys_addr;
+	q_cmpt_ctxt.bs_addr = (uint64_t)cmptq->cmpt_mz->iova;
 	q_cmpt_ctxt.desc_sz = cmpt_desc_fmt;
 	q_cmpt_ctxt.valid = 1;
 
@@ -1512,7 +1515,7 @@ static int qdma_pf_cmptq_context_write(struct rte_eth_dev *dev, uint32_t qid)
 	/* Set Completion Context */
 	err = qdma_dev->hw_access->qdma_cmpt_ctx_conf(dev, (qid + queue_base),
 				&q_cmpt_ctxt, QDMA_HW_ACCESS_WRITE);
-	if (err != QDMA_SUCCESS)
+	if (err < 0)
 		return qdma_dev->hw_access->qdma_get_error_code(err);
 
 	cmptq->cmpt_cidx_info.counter_idx = cmptq->threshidx;
@@ -1771,4 +1774,43 @@ uint16_t rte_pmd_qdma_mm_cmpt_process(int port_id, uint32_t qid,
 			cmptq->queue_id,
 			&cmptq->cmpt_cidx_info);
 	return count;
+}
+
+/*****************************************************************************/
+/**
+ * Function Name:   rte_pmd_qdma_dev_close
+ * Description:     DPDK PMD function to close the device.
+ *
+ * @param   port_id Port ID
+ *
+ * @return  '0' on success and '< 0' on failure
+ *
+ ******************************************************************************/
+int rte_pmd_qdma_dev_close(uint16_t port_id)
+{
+	struct rte_eth_dev *dev;
+	struct qdma_pci_dev *qdma_dev;
+
+	if (port_id >= rte_eth_dev_count_avail()) {
+		PMD_DRV_LOG(ERR, "Wrong port id %d\n", port_id);
+		return -ENOTSUP;
+	}
+	dev = &rte_eth_devices[port_id];
+	qdma_dev = dev->data->dev_private;
+
+	dev->data->dev_started = 0;
+
+	if (qdma_dev->is_vf)
+		qdma_vf_dev_close(dev);
+	else
+		qdma_dev_close(dev);
+
+	dev->data->nb_rx_queues = 0;
+	rte_free(dev->data->rx_queues);
+	dev->data->rx_queues = NULL;
+	dev->data->nb_tx_queues = 0;
+	rte_free(dev->data->tx_queues);
+	dev->data->tx_queues = NULL;
+
+	return 0;
 }

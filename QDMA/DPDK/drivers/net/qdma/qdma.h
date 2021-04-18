@@ -1,7 +1,7 @@
 /*-
  * BSD LICENSE
  *
- * Copyright(c) 2017-2020 Xilinx, Inc. All rights reserved.
+ * Copyright(c) 2017-2021 Xilinx, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,9 +44,6 @@
 #include <rte_memzone.h>
 #include <linux/pci.h>
 #include "qdma_user.h"
-#include "qdma_soft_reg.h"
-#include "eqdma_soft_reg.h"
-#include "qdma_s80_hard_reg.h"
 #include "qdma_resource_mgmt.h"
 #include "qdma_mbox.h"
 #include "rte_pmd_qdma.h"
@@ -83,6 +80,8 @@
 #define WB_TIMEOUT			(100000)
 #define RESET_TIMEOUT		(60000)
 #define SHUTDOWN_TIMEOUT	(60000)
+
+#define QDMA_MAX_BUFLEN     (2048 * 10)
 
 #ifdef spin_lock_init
 #undef spin_lock_init
@@ -404,4 +403,6 @@ struct rte_memzone *qdma_zone_reserve(struct rte_eth_dev *dev,
 bool is_qdma_supported(struct rte_eth_dev *dev);
 bool is_vf_device_supported(struct rte_eth_dev *dev);
 bool is_pf_device_supported(struct rte_eth_dev *dev);
+
+void qdma_check_errors(void *arg);
 #endif /* ifndef __QDMA_H__ */

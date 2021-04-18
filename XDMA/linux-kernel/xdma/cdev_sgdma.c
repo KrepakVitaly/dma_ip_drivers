@@ -36,10 +36,13 @@
 #include "xdma_thread.h"
 
 /* Module Parameters */
-unsigned int sgdma_timeout = 10;
-module_param(sgdma_timeout, uint, 0644);
-MODULE_PARM_DESC(sgdma_timeout, "timeout in seconds for sgdma, default is 10 sec.");
+unsigned int h2c_timeout = 10;
+module_param(h2c_timeout, uint, 0644);
+MODULE_PARM_DESC(h2c_timeout, "H2C sgdma timeout in seconds, default is 10 sec.");
 
+unsigned int c2h_timeout = 10;
+module_param(c2h_timeout, uint, 0644);
+MODULE_PARM_DESC(c2h_timeout, "C2H sgdma timeout in seconds, default is 10 sec.");
 
 extern struct kmem_cache *cdev_cache;
 static void char_sgdma_unmap_user_buf(struct xdma_io_cb *cb, bool write);
@@ -85,7 +88,9 @@ static void async_io_handler(unsigned long  cb_hndl, int err)
 	if (!err)
 		numbytes = xdma_xfer_completion((void *)cb, xdev,
 				engine->channel, cb->write, cb->ep_addr,
-				&cb->sgt, 0, sgdma_timeout * 1000);
+				&cb->sgt, 0, 
+				cb->write ? h2c_timeout * 1000 :
+					    c2h_timeout * 1000);
 
 	char_sgdma_unmap_user_buf(cb, cb->write);
 
@@ -387,7 +392,8 @@ static ssize_t char_sgdma_read_write(struct file *file, const char __user *buf,
 		return rv;
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, *pos, &cb.sgt,
-				0, sgdma_timeout * 1000);
+				0, write ? h2c_timeout * 1000 :
+					   c2h_timeout * 1000);
 
 	char_sgdma_unmap_user_buf(&cb, write);
 
@@ -470,7 +476,7 @@ static ssize_t cdev_aio_write(struct kiocb *iocb, const struct iovec *io,
 		rv = xdma_xfer_submit_nowait((void *)&caio->cb[i], xdev,
 					engine->channel, caio->cb[i].write,
 					caio->cb[i].ep_addr, &caio->cb[i].sgt,
-					0, sgdma_timeout * 1000);
+					0, h2c_timeout * 1000);
 	}
 
 	if (engine->cmplthp)
@@ -478,7 +484,6 @@ static ssize_t cdev_aio_write(struct kiocb *iocb, const struct iovec *io,
 
 	return -EIOCBQUEUED;
 }
-
 
 static ssize_t cdev_aio_read(struct kiocb *iocb, const struct iovec *io,
 				unsigned long count, loff_t pos)
@@ -545,7 +550,7 @@ static ssize_t cdev_aio_read(struct kiocb *iocb, const struct iovec *io,
 		rv = xdma_xfer_submit_nowait((void *)&caio->cb[i], xdev,
 					engine->channel, caio->cb[i].write,
 					caio->cb[i].ep_addr, &caio->cb[i].sgt,
-					0, sgdma_timeout * 1000);
+					0, c2h_timeout * 1000);
 	}
 
 	if (engine->cmplthp)
@@ -611,7 +616,7 @@ static int ioctl_do_perf_start(struct xdma_engine *engine, unsigned long arg)
 	enable_perf(engine);
 	dbg_perf("transfer_size = %d\n", engine->xdma_perf->transfer_size);
 	/* initialize wait queue */
-#if KERNEL_VERSION(4, 6, 0) <= LINUX_VERSION_CODE
+#if HAS_SWAKE_UP
 	init_swait_queue_head(&engine->xdma_perf_wq);
 #else
 	init_waitqueue_head(&engine->xdma_perf_wq);
@@ -784,6 +789,8 @@ static int char_sgdma_open(struct inode *inode, struct file *file)
 		if (engine->device_open == 1)
 			return -EBUSY;
 		engine->device_open = 1;
+
+		engine->eop_flush = (file->f_flags & O_TRUNC) ? 1 : 0;
 	}
 
 	return 0;
@@ -801,11 +808,8 @@ static int char_sgdma_close(struct inode *inode, struct file *file)
 
 	engine = xcdev->engine;
 
-	if (engine->streaming && engine->dir == DMA_FROM_DEVICE) {
+	if (engine->streaming && engine->dir == DMA_FROM_DEVICE)
 		engine->device_open = 0;
-		if (engine->cyclic_req)
-			return xdma_cyclic_transfer_teardown(engine);
-	}
 
 	return 0;
 }

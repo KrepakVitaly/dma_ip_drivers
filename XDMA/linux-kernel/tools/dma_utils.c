@@ -47,6 +47,7 @@ ssize_t read_to_buffer(char *fname, int fd, char *buffer, uint64_t size,
 	uint64_t count = 0;
 	char *buf = buffer;
 	off_t offset = base;
+	int loop = 0;
 
 	while (count < size) {
 		uint64_t bytes = size - count;
@@ -66,23 +67,28 @@ ssize_t read_to_buffer(char *fname, int fd, char *buffer, uint64_t size,
 
 		/* read data from file into memory buffer */
 		rc = read(fd, buf, bytes);
-		if (rc != bytes) {
-			fprintf(stderr, "%s, R off 0x%lx, 0x%lx != 0x%lx.\n",
-				fname, count, rc, bytes);
-				perror("read file");
+		if (rc < 0) {
+			fprintf(stderr, "%s, read 0x%lx @ 0x%lx failed %ld.\n",
+				fname, bytes, offset, rc);
+			perror("read file");
 			return -EIO;
 		}
 
-		count += bytes;
+		count += rc;
+		if (rc != bytes) {
+			fprintf(stderr, "%s, read underflow 0x%lx/0x%lx @ 0x%lx.\n",
+				fname, rc, bytes, offset);
+			break;
+		}
+
 		buf += bytes;
 		offset += bytes;
-	}	 
-
-	if (count != size) {
-		fprintf(stderr, "%s, R failed 0x%lx != 0x%lx.\n",
-				fname, count, size);
-		return -EIO;
+		loop++;
 	}
+
+	if (count != size && loop)
+		fprintf(stderr, "%s, read underflow 0x%lx/0x%lx.\n",
+			fname, count, size);
 	return count;
 }
 
@@ -93,6 +99,7 @@ ssize_t write_from_buffer(char *fname, int fd, char *buffer, uint64_t size,
 	uint64_t count = 0;
 	char *buf = buffer;
 	off_t offset = base;
+	int loop = 0;
 
 	while (count < size) {
 		uint64_t bytes = size - count;
@@ -112,23 +119,29 @@ ssize_t write_from_buffer(char *fname, int fd, char *buffer, uint64_t size,
 
 		/* write data to file from memory buffer */
 		rc = write(fd, buf, bytes);
-		if (rc != bytes) {
-			fprintf(stderr, "%s, W off 0x%lx, 0x%lx != 0x%lx.\n",
-				fname, offset, rc, bytes);
-				perror("write file");
+		if (rc < 0) {
+			fprintf(stderr, "%s, write 0x%lx @ 0x%lx failed %ld.\n",
+				fname, bytes, offset, rc);
+			perror("write file");
 			return -EIO;
 		}
 
-		count += bytes;
+		count += rc;
+		if (rc != bytes) {
+			fprintf(stderr, "%s, write underflow 0x%lx/0x%lx @ 0x%lx.\n",
+				fname, rc, bytes, offset);
+			break;
+		}
 		buf += bytes;
 		offset += bytes;
-	}	 
 
-	if (count != size) {
-		fprintf(stderr, "%s, R failed 0x%lx != 0x%lx.\n",
-				fname, count, size);
-		return -EIO;
-	}
+		loop++;
+	}	
+
+	if (count != size && loop)
+		fprintf(stderr, "%s, write underflow 0x%lx/0x%lx.\n",
+			fname, count, size);
+
 	return count;
 }
 
@@ -168,4 +181,3 @@ void timespec_sub(struct timespec *t1, struct timespec *t2)
 		t1->tv_nsec += 1000000000;
 	}
 }
-
