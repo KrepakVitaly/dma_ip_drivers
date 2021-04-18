@@ -16,14 +16,14 @@ echo -n "Loading xdma driver..."
 # TODO: autoload this modules
 #this modules must be loaded for v4l2 device 
 modprobe videobuf2-memops
-modprobe videobuf2-common
-modprobe videobuf-common
+#modprobe videobuf2-common
+#modprobe videobuf-common
 modprobe v4l2-mem2mem
 modprobe videobuf2-dma-contig
-modprobe videobuf2-v4l2 
-modprobe videobuf2-dvb 
-modprobe videobuf2-dma-sg 
-modprobe videobuf2-core 
+modprobe videobuf2-v4l2
+modprobe videobuf2-dvb
+modprobe videobuf2-dma-sg
+modprobe videobuf2-core
 modprobe videobuf2-vmalloc
 modprobe videobuf-vmalloc
 

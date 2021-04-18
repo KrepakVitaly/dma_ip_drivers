@@ -434,7 +434,7 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
         for (i = 0; i < 255; i++) {
             int rand;
             get_random_bytes(&rand, sizeof(rand));
-            memset(vbuf_ptr, i, rowsize * stripe_size);
+            memset(vbuf_ptr, rand, rowsize * stripe_size);
             vbuf_ptr += rowsize * stripe_size;
         }
 
