@@ -12,6 +12,21 @@ if [ $? -eq 0 ]; then
    rmmod xdma
 fi
 echo -n "Loading xdma driver..."
+
+# TODO: autoload this modules
+#this modules must be loaded for v4l2 device 
+modprobe videobuf2-memops
+modprobe videobuf2-common
+modprobe videobuf-common
+modprobe v4l2-mem2mem
+modprobe videobuf2-dma-contig
+modprobe videobuf2-v4l2 
+modprobe videobuf2-dvb 
+modprobe videobuf2-dma-sg 
+modprobe videobuf2-core 
+modprobe videobuf2-vmalloc
+modprobe videobuf-vmalloc
+
 # Use the following command to Load the driver in the default 
 # or interrupt drive mode. This will allow the driver to use 
 # interrupts to signal when DMA transfers are completed.
