@@ -121,7 +121,8 @@ static void vcam_out_buffer_queue(struct vb2_buffer *vb)
 static int vcam_start_streaming(struct vb2_queue *q, unsigned int count)
 {
     struct vcam_device *dev = q->drv_priv;
-
+    
+    pr_info("vcam_start_streaming\n");
     /* Try to start kernel thread */
     dev->sub_thr_id = kthread_create(submitter_thread, dev, "vcam_submitter");
     if (!dev->sub_thr_id) {
