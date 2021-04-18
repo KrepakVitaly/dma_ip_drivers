@@ -487,7 +487,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
 
     //size_t count = 1;
-    loff_t *pos = NULL;
+    loff_t pos = NULL;
     bool write = 0;
 	if (xc == NULL) {
 		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
@@ -514,7 +514,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		return;
 	}
 
-	res = xdma_xfer_submit(xdev, engine->channel, write, *pos, vbuf_sgt,
+	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
 
