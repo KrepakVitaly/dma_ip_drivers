@@ -484,10 +484,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	struct xdma_dev *xdev;
 	struct xdma_engine *engine;
 	//struct xdma_io_cb cb;
+        buf->vb.timestamp = ktime_get_ns();
+    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+    return;
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
 
-    //size_t count = 1;
-    loff_t pos = NULL;
+    size_t count = 1;
+    loff_t pos = 0;
     bool write = 0;
 	if (xc == NULL) {
 		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
@@ -496,6 +499,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     //size_t size = dev->output_format.sizeimage;
     //size_t rowsize = dev->output_format.bytesperline;
     //size_t rows = dev->output_format.height;
+
+	dbg_tfr("vbuf_sgt 0x%p, priv 0x%p, vcam_out_buffer 0x%p,%llu, pos %llu, W %d, %s.\n",
+		vbuf_sgt, xc, buf, (u64)count, (u64)pos, write,
+		engine->name);
 
     rv = xcdev_check(__func__, xc, 1);
 	if (rv < 0){
@@ -514,9 +521,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		return;
 	}
 
-	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
-				0, write ? 10 * 1000 :
-					   10 * 1000);
+	//res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
+	//			0, write ? 10 * 1000 :
+	//				   10 * 1000);
 
 
     buf->vb.timestamp = ktime_get_ns();

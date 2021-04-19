@@ -23,12 +23,7 @@
 #include <linux/ioctl.h>
 
 #include <linux/types.h>
-#include <asm/cacheflush.h>
-#include <linux/slab.h>
-#include <linux/aio.h>
-#include <linux/sched.h>
-#include <linux/wait.h>
-#include <linux/kthread.h>
+
 #include <linux/version.h>
 
 #include "libxdma_api.h"
