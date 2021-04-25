@@ -414,8 +414,6 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 
 
     char __user *buf_user = (char*) vbuf_ptr;
-    size_t count = size;
-    loff_t pos = 0;
     bool write = 0;
 
 	int rv;
@@ -424,6 +422,8 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 	struct xdma_dev *xdev;
 	struct xdma_engine *engine;
 	struct xdma_io_cb cb;
+    size_t count = 0x61410;
+    loff_t *pos = 0;
 
 	rv = xcdev_check(__func__, xcdev, 1);
 	if (rv < 0)
@@ -463,7 +463,7 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 
 	char_sgdma_unmap_user_buf(&cb, write);
 
-	return;// res;
+	//return;// res;
 
 
 
