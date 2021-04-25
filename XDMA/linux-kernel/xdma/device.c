@@ -413,6 +413,10 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
     size_t size = dev->output_format.sizeimage;
 
 
+    buf->vb.timestamp = ktime_get_ns();
+    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+    return;
+
     char __user *buf_user = (char*) vbuf_ptr;
     bool write = 0;
 
