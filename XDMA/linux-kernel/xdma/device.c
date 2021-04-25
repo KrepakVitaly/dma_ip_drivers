@@ -734,7 +734,7 @@ int submitter_thread(void *data)
         spin_unlock_irqrestore(&dev->out_q_slock, flags);
 
         if (!dev->fb_isopen) {
-            submit_noinput_sg_buffer(buf, dev);
+            submit_noinput_buffer(buf, dev);
         } else {
             struct vcam_in_buffer *in_buf;
             spin_lock_irqsave(&dev->in_q_slock, flags);
