@@ -6,6 +6,7 @@
 #include <media/videobuf2-dma-sg.h>
 
 #include "videobuf.h"
+#include "xdma_mod.h"
 
 static inline int init_vcam_in_buffer(struct vcam_in_buffer *buf, size_t size)
 {
@@ -197,3 +198,4 @@ int vcam_out_videobuf2_setup(struct vcam_device *dev)
 
     return vb2_queue_init(q);
 }
+
