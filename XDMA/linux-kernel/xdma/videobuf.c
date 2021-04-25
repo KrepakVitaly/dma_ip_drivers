@@ -3,7 +3,6 @@
 #include <linux/spinlock.h>
 #include <linux/vmalloc.h>
 #include <media/videobuf2-core.h>
-//#include <media/videobuf2-vmalloc.h>
 #include <media/videobuf2-dma-sg.h>
 
 #include "videobuf.h"
@@ -85,6 +84,7 @@ static int vcam_out_queue_setup(struct vb2_queue *vq,
         *nbuffers = 2;
 
     *nplanes = 1;
+    alloc_ctxs[0] = dev->xcdev->xpdev->pci_dev->dev;
 
     sizes[0] = size;
     for (i = 1; i < VB2_MAX_PLANES; ++i)
