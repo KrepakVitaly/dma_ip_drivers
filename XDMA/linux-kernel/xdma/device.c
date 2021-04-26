@@ -408,15 +408,8 @@ static inline void yuyv_to_rgb24_one_pix(void *dst,
 static void submit_noinput_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
 {
+    
     void *vbuf_ptr = vb2_plane_vaddr(&buf->vb, 0);
-
-    size_t size = dev->output_format.sizeimage;
-
-
-    buf->vb.timestamp = ktime_get_ns();
-    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
-    return;
-
     char __user *buf_user = (char*) vbuf_ptr;
     bool write = 0;
 
@@ -427,7 +420,12 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 	struct xdma_engine *engine;
 	struct xdma_io_cb cb;
     size_t count = 0x61410;
-    loff_t *pos = 0;
+    loff_t pos = 0;
+    //size_t size = dev->output_format.sizeimage;
+
+    //buf->vb.timestamp = ktime_get_ns();
+    //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+    //return;
 
 	rv = xcdev_check(__func__, xcdev, 1);
 	if (rv < 0)
@@ -481,21 +479,16 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
 {
     struct xdma_cdev *xc = dev->xcdev;
-
-
 	int rv;
-	ssize_t res = 0;
+	size_t res = 0;
 	struct xdma_dev *xdev;
 	struct xdma_engine *engine;
 	//struct xdma_io_cb cb;
-        buf->vb.timestamp = ktime_get_ns();
-    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
-    return;
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
-
     size_t count = 1;
     loff_t pos = 0;
     bool write = 0;
+
 	if (xc == NULL) {
 		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
 		return;
@@ -525,13 +518,15 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		return;
 	}
 
-	//res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
-	//			0, write ? 10 * 1000 :
-	//				   10 * 1000);
+	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
+				0, write ? 10 * 1000 :
+					   10 * 1000);
 
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+
+    
 }
 
 static void copy_scale(unsigned char *dst,
@@ -738,7 +733,7 @@ int submitter_thread(void *data)
         spin_unlock_irqrestore(&dev->out_q_slock, flags);
 
         if (!dev->fb_isopen) {
-            submit_noinput_buffer(buf, dev);
+            submit_noinput_sg_buffer(buf, dev);
         } else {
             struct vcam_in_buffer *in_buf;
             spin_lock_irqsave(&dev->in_q_slock, flags);
