@@ -517,11 +517,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 			write, engine->dir);
 		return;
 	}
+    pr_info("xdma_xfer_submit start\n");
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
 
+    pr_info("xdma_xfer_submit end\n");
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
