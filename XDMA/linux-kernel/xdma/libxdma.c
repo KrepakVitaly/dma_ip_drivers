@@ -3275,10 +3275,12 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			xlx_wait_event_interruptible(xfer->wq,
 				(xfer->state != TRANSFER_STATE_SUBMITTED));
 
+		pr_info("spin_lock_irqsave start\n");
 		spin_lock_irqsave(&engine->lock, flags);
 
 		switch (xfer->state) {
 		case TRANSFER_STATE_COMPLETED:
+			pr_info("spin_unlock_irqrestore start\n");
 			spin_unlock_irqrestore(&engine->lock, flags);
 
 			rv = 0;
@@ -3341,6 +3343,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		}
 
 		engine->desc_used -= xfer->desc_num;
+		pr_info("transfer_destroy start\n");
 		transfer_destroy(xdev, xfer);
 
 		/* use multiple transfers per request if we could not fit
@@ -3356,11 +3359,13 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	mutex_unlock(&engine->desc_lock);
 
 unmap_sgl:
+	pr_info("pci_unmap_sg start\n");
 	if (!dma_mapped && sgt->nents) {
 		pci_unmap_sg(xdev->pdev, sgt->sgl, sgt->orig_nents, dir);
 		sgt->nents = 0;
 	}
 
+	pr_info("xdma_request_free start\n");
 	if (req)
 		xdma_request_free(req);
 
