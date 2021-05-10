@@ -210,7 +210,7 @@ static int vcam_enum_frameintervals(struct file *file,
     frm_step->max.numerator = 1001;
     frm_step->max.denominator = 1;
     frm_step->step.numerator = 1001;
-    frm_step->step.denominator = 60000;
+    frm_step->step.denominator = 50050;
 
     return 0;
 }
@@ -750,12 +750,12 @@ int submitter_thread(void *data)
     have_a_nap:
         if (!dev->output_fps.denominator) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 30000;
+            dev->output_fps.denominator = 50050;
         }
         timeout_ms = dev->output_fps.denominator / dev->output_fps.numerator;
         if (!timeout_ms) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 60000;
+            dev->output_fps.denominator = 50050;
             timeout_ms =
                 dev->output_fps.denominator / dev->output_fps.numerator;
         }
@@ -902,7 +902,7 @@ struct vcam_device *create_vcam_device(size_t idx,
     }
 
     vcam->output_fps.numerator = 1001;
-    vcam->output_fps.denominator = 30000;
+    vcam->output_fps.denominator = 50050;
 
     return vcam;
 
