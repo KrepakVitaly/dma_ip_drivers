@@ -3231,7 +3231,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	while (nents) {
 		unsigned long flags;
 		struct xdma_transfer *xfer;
-
+		pr_info("transfer_init start\n");
 		/* build transfer */
 		rv = transfer_init(engine, req, &req->tfer[0]);
 		if (rv < 0) {
@@ -3256,7 +3256,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 #ifdef __LIBXDMA_DEBUG__
 		transfer_dump(xfer);
 #endif
-
+		pr_info("transfer_queue start\n");
 		rv = transfer_queue(engine, xfer);
 		if (rv < 0) {
 			mutex_unlock(&engine->desc_lock);
