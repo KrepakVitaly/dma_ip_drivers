@@ -488,13 +488,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     size_t count = 1;
     loff_t pos = 0;
     bool write = 0;
-
+/*
     struct xdma_io_cb cb;
 	memset(&cb, 0, sizeof(struct xdma_io_cb));
-	cb.buf = NULL;
+	cb.buf = malloc();
 	cb.len = count;
 	cb.ep_addr = (u64)pos;
-	cb.write = write;
+	cb.write = write;*/
 
 
 	if (xc == NULL) {
@@ -531,14 +531,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     pr_info("xdma_xfer_submit start\n");
 
 
-
+/*
 	res = xdma_xfer_submit_nowait(&cb, xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
-					   10 * 1000);
-/*
+					   10 * 1000);*/
+
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
-					   10 * 1000);*/
+					   10 * 1000);
 
     pr_info("xdma_xfer_submit end\n");
 
@@ -743,7 +743,7 @@ int submitter_thread(void *data)
         int computation_time_jiff = jiffies;
         spin_lock_irqsave(&dev->out_q_slock, flags);
         if (list_empty(&q->active)) {
-            pr_debug("Buffer queue is empty\n");
+            pr_info("Buffer queue is empty\n");
             spin_unlock_irqrestore(&dev->out_q_slock, flags);
             goto have_a_nap;
         }
@@ -758,7 +758,7 @@ int submitter_thread(void *data)
             spin_lock_irqsave(&dev->in_q_slock, flags);
             in_buf = in_q->ready;
             if (!in_buf) {
-                pr_err("Ready buffer in input queue has NULL pointer\n");
+                pr_info("Ready buffer in input queue has NULL pointer\n");
                 goto unlock_and_continue;
             }
             submit_copy_buffer(buf, in_buf, dev);
@@ -789,6 +789,7 @@ int submitter_thread(void *data)
         } else if (timeout > computation_time_jiff) {
             schedule_timeout_interruptible(timeout - computation_time_jiff);
         }
+        pr_info("timeout_ms %d, timeout_ms %d \n", timeout_ms, timeout);
     }
 
     return 0;
