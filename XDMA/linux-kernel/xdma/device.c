@@ -497,7 +497,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     //size_t rowsize = dev->output_format.bytesperline;
     //size_t rows = dev->output_format.height;
 
-	dbg_tfr("vbuf_sgt 0x%p, priv 0x%p, vcam_out_buffer 0x%p,%llu, pos %llu, W %d, %s.\n",
+	pr_info("vbuf_sgt 0x%p, priv 0x%p, vcam_out_buffer 0x%p,%llu, pos %llu, W %d, %s.\n",
 		vbuf_sgt, xc, buf, (u64)count, (u64)pos, write,
 		engine->name);
 
