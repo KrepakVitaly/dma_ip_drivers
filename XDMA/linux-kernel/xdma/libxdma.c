@@ -3198,6 +3198,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		return -EINVAL;
 	}
 
+	pr_info("pci_map_sg start\n");
 	if (!dma_mapped) {
 		nents = pci_map_sg(xdev->pdev, sg, sgt->orig_nents, dir);
 		if (!nents) {
@@ -3212,6 +3213,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			return -EIO;
 		}
 	}
+	pr_info("xdma_init_request start\n");
 
 	req = xdma_init_request(sgt, ep_addr);
 	if (!req) {
