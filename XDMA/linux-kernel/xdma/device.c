@@ -491,9 +491,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     struct xdma_io_cb cb;
 	memset(&cb, 0, sizeof(struct xdma_io_cb));
-	cb.buf = (char __user *)buf;
+	cb.buf = NULL;
 	cb.len = count;
-	cb.ep_addr = (u64)*pos;
+	cb.ep_addr = (u64)pos;
 	cb.write = write;
 
 
