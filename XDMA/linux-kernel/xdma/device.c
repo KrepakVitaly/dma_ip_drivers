@@ -493,13 +493,16 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
 		return;
 	}
-    //size_t size = dev->output_format.sizeimage;
-    //size_t rowsize = dev->output_format.bytesperline;
-    //size_t rows = dev->output_format.height;
+    size_t size = dev->output_format.sizeimage;
+    size_t rowsize = dev->output_format.bytesperline;
+    size_t rows = dev->output_format.height;
 
-	pr_info("vbuf_sgt 0x%p, vubf len %d priv 0x%p, vcam_out_buffer 0x%p,%llu, pos %llu, W %d, %s.\n",
+	pr_info("vbuf_sgt 0x%p, vubf len %d, priv 0x%p, vcam_out_buffer 0x%p,%llu, pos %llu, W %d, %s.\n",
 		vbuf_sgt, vbuf_sgt->sgl->length, xc, buf, (u64)count, (u64)pos, write,
 		engine->name);
+
+    pr_info("size %d, rowsize %d, rows %d\n",
+		size, rowsize, rows);
 
     rv = xcdev_check(__func__, xc, 1);
 	if (rv < 0){
@@ -785,7 +788,7 @@ static void fill_v4l2pixfmt(struct v4l2_pix_format *fmt,
 
     memset(fmt, 0x00, sizeof(struct v4l2_pix_format));
     fmt->width = dev_spec->width;
-    fmt->height = dev_spec->height;
+    fmt->height = dev_spec->rr;
     pr_debug("Filling %dx%d\n", dev_spec->width, dev_spec->height);
 
     switch (dev_spec->pix_fmt) {

@@ -3200,7 +3200,6 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		return -EINVAL;
 	}
 
-	pr_info("pci_map_sg start\n");
 	if (!dma_mapped) {
 		nents = pci_map_sg(xdev->pdev, sg, sgt->orig_nents, dir);
 		if (!nents) {
@@ -3215,7 +3214,6 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			return -EIO;
 		}
 	}
-	pr_info("xdma_init_request start\n");
 
 	req = xdma_init_request(sgt, ep_addr);
 	if (!req) {
@@ -3233,7 +3231,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	while (nents) {
 		unsigned long flags;
 		struct xdma_transfer *xfer;
-		pr_info("transfer_init start\n");
+
 		/* build transfer */
 		rv = transfer_init(engine, req, &req->tfer[0]);
 		if (rv < 0) {
@@ -3258,9 +3256,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 #ifdef __LIBXDMA_DEBUG__
 		transfer_dump(xfer);
 #endif
-		pr_info("transfer_queue start\n");
 		rv = transfer_queue(engine, xfer);
-		pr_info("transfer_queue end\n");
 		if (rv < 0) {
 			mutex_unlock(&engine->desc_lock);
 			pr_info("unable to submit %s, %d.\n", engine->name, rv);
@@ -3268,21 +3264,18 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		}
 
 
-		pr_info("xdma_kthread_wakeup start\n");
 		if (engine->cmplthp)
 			xdma_kthread_wakeup(engine->cmplthp);
 
 
 		if (timeout_ms > 0)
 		{
-			pr_info("xlx_wait_event_interruptible_timeout start\n");
 			xlx_wait_event_interruptible_timeout(xfer->wq,
 				(xfer->state != TRANSFER_STATE_SUBMITTED),
 				msecs_to_jiffies(timeout_ms));
 		}
 		else
 		{
-			pr_info("xlx_wait_event_interruptible start\n");
 			xlx_wait_event_interruptible(xfer->wq,
 				(xfer->state != TRANSFER_STATE_SUBMITTED));
 		}
