@@ -489,6 +489,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     loff_t pos = 0;
     bool write = 0;
 
+    struct xdma_io_cb cb;
+	memset(&cb, 0, sizeof(struct xdma_io_cb));
+	cb.buf = (char __user *)buf;
+	cb.len = count;
+	cb.ep_addr = (u64)*pos;
+	cb.write = write;
+
+
 	if (xc == NULL) {
 		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
 		return;
@@ -497,7 +505,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     size_t rowsize = dev->output_format.bytesperline;
     size_t rows = dev->output_format.height;
 
-	pr_info("vbuf_sgt 0x%p, vubf len %d, priv 0x%p, vcam_out_buffer 0x%p,%llu, pos %llu, W %d, %s.\n",
+	pr_info("vbuf_sgt 0x%p, vubf len %d, priv 0x%p, vcam_out_buffer 0x%p, %llu, pos %llu, W %d, %s.\n",
 		vbuf_sgt, vbuf_sgt->sgl->length, xc, buf, (u64)count, (u64)pos, write,
 		engine->name);
 
@@ -522,9 +530,15 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	}
     pr_info("xdma_xfer_submit start\n");
 
-	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
+
+
+	res = xdma_xfer_submit_nowait(&cb, xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
+/*
+	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
+				0, write ? 10 * 1000 :
+					   10 * 1000);*/
 
     pr_info("xdma_xfer_submit end\n");
 
