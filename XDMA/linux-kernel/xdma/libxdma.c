@@ -3267,16 +3267,25 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			goto unmap_sgl;
 		}
 
+
+		pr_info("xdma_kthread_wakeup start\n");
 		if (engine->cmplthp)
 			xdma_kthread_wakeup(engine->cmplthp);
 
+
 		if (timeout_ms > 0)
+		{
+			pr_info("xlx_wait_event_interruptible_timeout start\n");
 			xlx_wait_event_interruptible_timeout(xfer->wq,
 				(xfer->state != TRANSFER_STATE_SUBMITTED),
 				msecs_to_jiffies(timeout_ms));
+		}
 		else
+		{
+			pr_info("xlx_wait_event_interruptible start\n");
 			xlx_wait_event_interruptible(xfer->wq,
 				(xfer->state != TRANSFER_STATE_SUBMITTED));
+		}
 
 		pr_info("spin_lock_irqsave start\n");
 		spin_lock_irqsave(&engine->lock, flags);
