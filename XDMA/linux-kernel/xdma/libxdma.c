@@ -2501,7 +2501,9 @@ static int transfer_queue(struct xdma_engine *engine,
 	if (!engine->running) {
 		/* start engine */
 		dbg_tfr("%s(): starting %s engine.\n", __func__, engine->name);
+		pr_info("engine_start start\n");
 		transfer_started = engine_start(engine);
+		pr_info("engine_start end\n");
 		if (!transfer_started) {
 			pr_err("Failed to start dma engine\n");
 			goto shutdown;
@@ -3258,6 +3260,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 #endif
 		pr_info("transfer_queue start\n");
 		rv = transfer_queue(engine, xfer);
+		pr_info("transfer_queue end\n");
 		if (rv < 0) {
 			mutex_unlock(&engine->desc_lock);
 			pr_info("unable to submit %s, %d.\n", engine->name, rv);
