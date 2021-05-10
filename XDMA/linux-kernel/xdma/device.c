@@ -788,7 +788,7 @@ static void fill_v4l2pixfmt(struct v4l2_pix_format *fmt,
 
     memset(fmt, 0x00, sizeof(struct v4l2_pix_format));
     fmt->width = dev_spec->width;
-    fmt->height = dev_spec->rr;
+    fmt->height = dev_spec->height;
     pr_debug("Filling %dx%d\n", dev_spec->width, dev_spec->height);
 
     switch (dev_spec->pix_fmt) {
