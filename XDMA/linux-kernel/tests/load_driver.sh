@@ -30,7 +30,7 @@ modprobe videobuf-vmalloc
 # Use the following command to Load the driver in the default 
 # or interrupt drive mode. This will allow the driver to use 
 # interrupts to signal when DMA transfers are completed.
-insmod ../xdma/xdma.ko
+insmod ../xdma/xdma.ko poll_mode=1
 # Use the following command to Load the driver in Polling
 # mode rather than than interrupt mode. This will allow the
 # driver to use polling to determ when DMA transfers are 
@@ -57,25 +57,39 @@ else
   exit 1
 fi
 
-echo "tready signal bind to 1 (camera mode on)"
-../tools/reg_rw /dev/xdma0_user 0x60 -w 0x0
 
-echo "set frame size 0x1020 width and 0x608 height"
-../tools/reg_rw /dev/xdma0_user 0x20 -w 0x1020
-../tools/reg_rw /dev/xdma0_user 0x30 -w 0x608
+echo "tready signal bind to 1 (camera mode on)"
+../tools/reg_rw /dev/xdma0_user 0x60 -w 0x01
 
 echo "set freq divider 0x32dcd5"
-../tools/reg_rw /dev/xdma0_user 0x40 -w 0x32dcd5
+../tools/reg_rw /dev/xdma0_user 0x40 -w 0x196e6a
 
 
 echo "set pattern no.3 (with frame counter)"
-../tools/reg_rw /dev/xdma0_user 0x50 -w 0x03
+../tools/reg_rw /dev/xdma0_user 0x50 -w 0x00
 
+
+echo "go reset"
+#../tools/reg_rw /dev/xdma0_user 0x10 -w 0x00
+#sleep 1
+#../tools/reg_rw /dev/xdma0_user 0x10 -w 0x01
+
+
+echo "set frame size 0x1020 width and 0x608 height"
+../tools/reg_rw /dev/xdma0_user 0x20 -w 0x780
+../tools/reg_rw /dev/xdma0_user 0x30 -w 0x1e0
+
+echo "set frame size 0x1020 width and 0x608 height"
+#../tools/reg_rw /dev/xdma0_user 0x20 -w 0x810
+#../tools/reg_rw /dev/xdma0_user 0x30 -w 0x304
 
 echo "go reset"
 ../tools/reg_rw /dev/xdma0_user 0x10 -w 0x00
 sleep 1
 ../tools/reg_rw /dev/xdma0_user 0x10 -w 0x01
 
+echo "set frame size 0x1020 width and 0x608 height"
+#../tools/reg_rw /dev/xdma0_user 0x20 -w 0x2040
+#../tools/reg_rw /dev/xdma0_user 0x30 -w 0x608
 
 echo " DONE"
