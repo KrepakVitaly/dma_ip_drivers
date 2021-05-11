@@ -768,14 +768,14 @@ int submitter_thread(void *data)
     have_a_nap:
         if (!dev->output_fps.denominator) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 20050;
+            dev->output_fps.denominator = 50050;
         }
-        timeout_ms = dev->output_fps.numerator / dev->output_fps.denominator * 1000;
+        timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator;
         if (!timeout_ms) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 20050;
+            dev->output_fps.denominator = 50050;
             timeout_ms =
-                dev->output_fps.denominator / dev->output_fps.numerator;
+                dev->output_fps.numerator / dev->output_fps.denominator * 1000;
         }
 
         /* Compute timeout and update FPS */
@@ -784,7 +784,6 @@ int submitter_thread(void *data)
         int computation_time_ms = msecs_to_jiffies(computation_time_jiff);
         pr_info("computation_time_ms %d \n", computation_time_ms);
         if (computation_time_jiff > timeout) {
-            
             dev->output_fps.numerator = 1001;
             dev->output_fps.denominator = 1000 * computation_time_ms;
             
@@ -931,7 +930,7 @@ struct vcam_device *create_vcam_device(size_t idx,
     }
 
     vcam->output_fps.numerator = 1001;
-    vcam->output_fps.denominator = 20050;
+    vcam->output_fps.denominator = 50050;
 
     return vcam;
 
