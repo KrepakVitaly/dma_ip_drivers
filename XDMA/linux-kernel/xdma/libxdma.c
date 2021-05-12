@@ -3284,10 +3284,10 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 
 
 		spin_lock_irqsave(&engine->lock, flags);
-		pr_info("spin_lock_irqsave end\n");
+		//pr_info("spin_lock_irqsave end\n");
 		switch (xfer->state) {
 		case TRANSFER_STATE_COMPLETED:
-			pr_info("spin_unlock_irqrestore start\n");
+			//pr_info("spin_unlock_irqrestore start\n");
 			spin_unlock_irqrestore(&engine->lock, flags);
 
 			rv = 0;
