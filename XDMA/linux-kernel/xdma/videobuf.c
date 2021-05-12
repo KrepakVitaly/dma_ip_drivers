@@ -90,7 +90,7 @@ static int vcam_out_queue_setup(struct vb2_queue *vq,
     //alloc_ctx = vb2_dma_sg_init_ctx(&dev->xcdev->xpdev->pdev->dev);
 
     pr_info("PAGE_SIZE %d PAGE_SHIFT %d \n", PAGE_SIZE, PAGE_SHIFT);
-    sizes[0] = size + 0x1000;
+    sizes[0] = 1048576;// size + 0x1000;
     pr_info("vcam_out_queue_setup size %d, nbuffers %d, nplanes %d\n", size, *nbuffers, *nplanes);
     for (i = 1; i < VB2_MAX_PLANES; ++i)
         sizes[i] = 0;
@@ -194,7 +194,7 @@ int vcam_out_videobuf2_setup(struct vcam_device *dev)
     struct vb2_queue *q = &dev->vb_out_vidq;
 
     q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    q->io_modes = VB2_MMAP | VB2_USERPTR | VB2_READ | VB2_WRITE;
+    q->io_modes = VB2_MMAP;// | VB2_USERPTR | VB2_READ | VB2_WRITE;
     q->drv_priv = dev;
     q->buf_struct_size = sizeof(struct vcam_out_buffer);
     q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
