@@ -537,6 +537,19 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 				0, write ? 10 * 1000 :
 					   10 * 1000);*/
 
+    //sgt_dump(vbuf_sgt); 
+
+    int i;
+	struct scatterlist *sg = vbuf_sgt->sgl;
+
+	pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u.\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
+		vbuf_sgt->orig_nents);
+
+	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
+		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u.\n", i, sg,
+			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
+			sg_dma_len(sg)); 
+
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
