@@ -2501,9 +2501,9 @@ static int transfer_queue(struct xdma_engine *engine,
 	if (!engine->running) {
 		/* start engine */
 		dbg_tfr("%s(): starting %s engine.\n", __func__, engine->name);
-		pr_info("engine_start start\n");
+		//pr_info("engine_start start\n");
 		transfer_started = engine_start(engine);
-		pr_info("engine_start end\n");
+		//pr_info("engine_start end\n");
 		if (!transfer_started) {
 			pr_err("Failed to start dma engine\n");
 			goto shutdown;
@@ -3350,7 +3350,6 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		}
 
 		engine->desc_used -= xfer->desc_num;
-		pr_info("transfer_destroy start\n");
 		transfer_destroy(xdev, xfer);
 
 		/* use multiple transfers per request if we could not fit
@@ -3366,13 +3365,11 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 	mutex_unlock(&engine->desc_lock);
 
 unmap_sgl:
-	pr_info("pci_unmap_sg start\n");
 	if (!dma_mapped && sgt->nents) {
 		pci_unmap_sg(xdev->pdev, sgt->sgl, sgt->orig_nents, dir);
 		sgt->nents = 0;
 	}
 
-	pr_info("xdma_request_free start\n");
 	if (req)
 		xdma_request_free(req);
 
