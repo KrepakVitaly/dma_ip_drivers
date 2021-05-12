@@ -3200,6 +3200,7 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 		return -EINVAL;
 	}
 
+	pr_info("pci_map_sg, sgt 0x%p, sgl 0x%p orig_nents %d, sgl.len %d \n", sgt, sg, sgt->orig_nents, sg->length );
 	if (!dma_mapped) {
 		nents = pci_map_sg(xdev->pdev, sg, sgt->orig_nents, dir);
 		if (!nents) {
