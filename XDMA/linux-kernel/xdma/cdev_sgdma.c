@@ -391,6 +391,9 @@ static ssize_t char_sgdma_read_write(struct file *file, const char __user *buf,
 	if (rv < 0)
 		return rv;
 
+	pr_info("&cb.sgt 0x%p, &cb.sgt len %d.\n",
+		&cb.sgt, sg_dma_len(&cb.sgt));
+
 	res = xdma_xfer_submit(xdev, engine->channel, write, *pos, &cb.sgt,
 				0, write ? h2c_timeout * 1000 :
 					   c2h_timeout * 1000);
