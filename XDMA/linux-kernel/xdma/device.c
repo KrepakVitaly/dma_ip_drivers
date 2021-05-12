@@ -484,6 +484,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	struct xdma_dev *xdev;
 	struct xdma_engine *engine;
 	//struct xdma_io_cb cb;
+
+    
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
     size_t count = 1;
     loff_t pos = 0;
