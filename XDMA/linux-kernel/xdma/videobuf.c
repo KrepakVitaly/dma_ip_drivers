@@ -88,7 +88,7 @@ static int vcam_out_queue_setup(struct vb2_queue *vq,
     alloc_ctxs[0] = &dev->xcdev->xpdev->pdev->dev;
 
     sizes[0] = size;
-    pr_info("vcam_out_queue_setup size %l\n", size);
+    pr_info("vcam_out_queue_setup size %d\n", size);
     for (i = 1; i < VB2_MAX_PLANES; ++i)
         sizes[i] = 0;
     pr_debug("queue_setup completed\n");
