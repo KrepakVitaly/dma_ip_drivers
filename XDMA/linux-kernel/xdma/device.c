@@ -752,6 +752,7 @@ int submitter_thread(void *data)
     void __iomem *reg;
 	u32 w;
 	int rv;
+    int i;
     struct xdma_cdev *xcdev = dev->xcdev;
     struct xdma_dev *xdev = xcdev->xdev;
 
@@ -764,7 +765,7 @@ int submitter_thread(void *data)
 		//return -EPROTO;
 	/* first address is BAR base plus file position offset */
 	reg = xdev->bar[xcdev->bar];
-	for (int i = 0x10; i < 0x70; i+0x10)
+	for (i = 0x10; i < 0x70; i+0x10)
     {
         w = ioread32(reg+i);
         dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
