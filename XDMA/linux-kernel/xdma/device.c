@@ -765,7 +765,7 @@ int submitter_thread(void *data)
 		//return -EPROTO;
 	/* first address is BAR base plus file position offset */
 	reg = xdev->bar[xcdev->bar];
-	for (i = 0x10; i < 0x70; i+0x10)
+	for (i = 0x10; i < 0x70; i=i+0x10)
     {
         w = ioread32(reg+i);
         dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
