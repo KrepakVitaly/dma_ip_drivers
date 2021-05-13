@@ -771,7 +771,7 @@ int submitter_thread(void *data)
 	//w = read_register(reg);
 	w = ioread32(reg);
 	dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
-			__func__, reg, (long)count, (int)0x10, w);
+			__func__, reg, (long)4, (int)0x10, w);
 	//rv = copy_to_user(buf, &w, 4);
 	if (rv)
 		dbg_sg("Copy to userspace failed but continuing\n");
