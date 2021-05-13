@@ -749,6 +749,43 @@ int submitter_thread(void *data)
     struct vcam_out_queue *q = &dev->vcam_out_vidq;
     struct vcam_in_queue *in_q = &dev->in_queue;
 
+
+	pr_info("submitter_thread.\n");
+
+    void __iomem *reg;
+	u32 w;
+	int rv;
+    struct xdma_cdev *xcdev = dev->xcdev;
+    struct xdma_dev *xdev;
+
+	rv = xcdev_check(__func__, xcdev, 0);
+	if (rv < 0)
+		return rv;
+	xdev = xcdev->xdev;
+
+	/* only 32-bit aligned and 32-bit multiples */
+	//if (*pos & 3)
+		//return -EPROTO;
+	/* first address is BAR base plus file position offset */
+	reg = xdev->bar[xcdev->bar] + 0x10;
+	//w = read_register(reg);
+	w = ioread32(reg);
+	dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
+			__func__, reg, (long)count, (int)0x10, w);
+	//rv = copy_to_user(buf, &w, 4);
+	if (rv)
+		dbg_sg("Copy to userspace failed but continuing\n");
+
+
+    
+	
+	size_t res = 0;
+	
+
+
+
+
+
     while (!kthread_should_stop()) {
         struct vcam_out_buffer *buf;
         int timeout_ms, timeout;
