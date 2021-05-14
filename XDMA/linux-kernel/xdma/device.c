@@ -478,28 +478,43 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
 {
-    struct xdma_cdev *xc = dev->xcdev;
+    struct xdma_cdev *xcdev = dev->xcdev;
 	int rv;
 	size_t res = 0;
-	struct xdma_dev *xdev;
-	struct xdma_engine *engine;
-	//struct xdma_io_cb cb;
 
-    
+    void __iomem *reg;
+	u32 w;
+    int i;
+    struct xdma_dev *xdev = xcdev->xdev;
+    struct xdma_engine *engine = xcdev->engine;
+
+	rv = xcdev_check(__func__, xcdev, 0);
+	if (rv < 0){
+        pr_err("check engine failed\n");
+        return;
+    }
+
+	/* only 32-bit aligned and 32-bit multiples */
+	//if (*pos & 3)
+		//return -EPROTO;
+	/* first address is BAR base plus file position offset */
+	reg = xdev->bar[xcdev->bar];
+	for (i = 0x10; i < 0x70; i=i+0x10)
+    {
+        w = ioread32(reg+i);
+        dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
+                __func__, reg, (long)4, (int)i, w);
+
+    }
+
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
+    struct scatterlist *sg = vbuf_sgt->sgl;
     size_t count = 1;
     loff_t pos = 0;
     bool write = 0;
-/*
-    struct xdma_io_cb cb;
-	memset(&cb, 0, sizeof(struct xdma_io_cb));
-	cb.buf = malloc();
-	cb.len = count;
-	cb.ep_addr = (u64)pos;
-	cb.write = write;*/
 
 
-	if (xc == NULL) {
+	if (xcdev == NULL) {
 		pr_err("submit_noinput_sg_buffer xdma_cdev is NULL.\n");
 		return;
 	}
@@ -508,20 +523,11 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     size_t rows = dev->output_format.height;
 
 	pr_info("vbuf_sgt 0x%p, vbuf len %d, priv 0x%p, vcam_out_buffer 0x%p, %llu, pos %llu, W %d, %s.\n",
-		vbuf_sgt, sg_dma_len(vbuf_sgt->sgl), xc, buf, (u64)count, (u64)pos, write,
+		vbuf_sgt, sg_dma_len(vbuf_sgt->sgl), xcdev, buf, (u64)count, (u64)pos, write,
 		engine->name);
 
     pr_info("size %d, rowsize %d, rows %d\n", size, rowsize, rows);
-
-    rv = xcdev_check(__func__, xc, 1);
-	if (rv < 0){
-        pr_err("check engine failed\n");
-        return;
-    }
-		
-	xdev = xc->xdev;
-    
-	engine = xc->engine;
+	
 
 	if ((write && engine->dir != DMA_TO_DEVICE) ||
 	    (!write && engine->dir != DMA_FROM_DEVICE)) {
@@ -529,18 +535,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 			write, engine->dir);
 		return;
 	}
-    //pr_info("xdma_xfer_submit start\n");
-
-
-/*
-	res = xdma_xfer_submit_nowait(&cb, xdev, engine->channel, write, pos, vbuf_sgt,
-				0, write ? 10 * 1000 :
-					   10 * 1000);*/
 
     //sgt_dump(vbuf_sgt); 
 
-    int i;
-	struct scatterlist *sg = vbuf_sgt->sgl;
+	
 
 	pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u.\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
 		vbuf_sgt->orig_nents);
@@ -554,12 +552,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
 
-    //pr_info("xdma_xfer_submit end\n");
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
-
-    
 }
 
 static void copy_scale(unsigned char *dst,
@@ -772,6 +767,8 @@ int submitter_thread(void *data)
                 __func__, reg, (long)4, (int)i, w);
 
     }
+
+    //iowrite32(w, reg);
 	
 
     while (!kthread_should_stop()) {
