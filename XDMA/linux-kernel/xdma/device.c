@@ -538,9 +538,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		return;
 	}
 
-    //sgt_dump(vbuf_sgt); 
-
-	
+    //sgt_dump(vbuf_sgt);
 
 	pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u.\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
 		vbuf_sgt->orig_nents);
@@ -549,13 +547,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u.\n", i, sg,
 			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
 			sg_dma_len(sg)); 
-
+/*
     w = 0x00;
     iowrite32(w, reg+0x10);
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
     w = 0x01;
     iowrite32(w, reg+0x10);
-    pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
+    pr_info("reset non-active 1, iowrite32 rv %d \n", rv);*/
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
@@ -778,6 +776,12 @@ int submitter_thread(void *data)
     }
 
     //iowrite32(w, reg);
+    w = 0x00;
+    iowrite32(w, reg+0x10);
+    pr_info("reset active 0, iowrite32 rv %d \n", rv);
+    w = 0x01;
+    iowrite32(w, reg+0x10);
+    pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
 	
 
     while (!kthread_should_stop()) {
@@ -836,7 +840,7 @@ int submitter_thread(void *data)
             
         } else if (timeout > computation_time_jiff) {
             
-            schedule_timeout_interruptible(timeout - computation_time_jiff);
+            //schedule_timeout_interruptible(timeout - computation_time_jiff);
         }
         pr_info("timeout_ms %d, timeout %d \n", timeout_ms, timeout);
         pr_info("computation_time_jiff %d \n", computation_time_jiff);
