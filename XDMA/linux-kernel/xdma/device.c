@@ -779,9 +779,9 @@ int submitter_thread(void *data)
     w = 0x00;
     iowrite32(w, reg+0x10);
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
-    w = 0x01;
-    iowrite32(w, reg+0x10);
-    pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
+    //w = 0x01;
+    //iowrite32(w, reg+0x10);
+    //pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
 	
 
     while (!kthread_should_stop()) {
