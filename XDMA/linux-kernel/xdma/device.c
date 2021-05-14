@@ -553,12 +553,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
     w = 0x01;
     iowrite32(w, reg+0x10);
-    pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
+    //pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
-
+    w = 0x00;
+    iowrite32(w, reg+0x10);
+    pr_info("reset active 0, iowrite32 rv %d \n", rv);
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
