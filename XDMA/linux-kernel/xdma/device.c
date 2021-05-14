@@ -507,6 +507,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     }
 
+
+
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
     struct scatterlist *sg = vbuf_sgt->sgl;
     size_t count = 1;
@@ -547,6 +549,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u.\n", i, sg,
 			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
 			sg_dma_len(sg)); 
+
+    w = 0x00;
+    iowrite32(w, reg+0x10);
+    pr_info("reset active 0, iowrite32 rv %d \n", rv);
+    w = 0x01;
+    iowrite32(w, reg+0x10);
+    pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
