@@ -563,8 +563,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
 
     sg = vbuf_sgt->sgl;
-    sg = sg_last(sg);
-    pr_info("sg at 0x%p last sg nent start value  and end value \n", ((sg)));//, *(int*)sg_virt(sg), *(int*)(sg_virt(sg)+sg_dma_len(sg)-sizeof(int)));
+    pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u.\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
+    vbuf_sgt->orig_nents);
+
+	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
+		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u.\n", i, sg,
+			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
+			sg_dma_len(sg)); 
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
