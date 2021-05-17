@@ -499,14 +499,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		//return -EPROTO;
 	/* first address is BAR base plus file position offset */
 	reg = xdev->bar[xcdev->bar];
-	for (i = 0x10; i < 0x70; i=i+0x10)
+	for (i = 0x10; i < 0x90; i=i+0x10)
     {
         w = ioread32(reg+i);
-        dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
+        dbg_sg("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n",
                 __func__, reg, (long)4, (int)i, w);
 
     }
-
+    dbg_sg("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x84, w);
 
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
@@ -552,14 +552,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     iowrite32(w, reg+0x10);
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
     w = 0x01;
-    iowrite32(w, reg+0x10);
+    //iowrite32(w, reg+0x10);
     //pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
     w = 0x00;
-    iowrite32(w, reg+0x10);
+    //iowrite32(w, reg+0x10);
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
 
     sg = vbuf_sgt->sgl;

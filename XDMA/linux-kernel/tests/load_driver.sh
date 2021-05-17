@@ -57,6 +57,11 @@ else
   exit 1
 fi
 
+#../tools/reg_rw /dev/xdma0_user 0x80 -w 0x00
+#../tools/reg_rw /dev/xdma0_user 0x84 -w 0x00
+sleep 1
+
+../tools/reg_rw /dev/xdma0_user 0x10 -w 0x01
 
 echo "tready signal bind to 1 (camera mode on)"
 ../tools/reg_rw /dev/xdma0_user 0x60 -w 0x00
@@ -66,24 +71,28 @@ echo "set freq divider 0xcb735"
 
 
 echo "set pattern with frame counter"
-../tools/reg_rw /dev/xdma0_user 0x50 -w 0x02
+../tools/reg_rw /dev/xdma0_user 0x50 -w 0x03
 
 
 echo "set frame size 0x780 width and 0x1e0 height"
-../tools/reg_rw /dev/xdma0_user 0x20 -w 0x780
+../tools/reg_rw /dev/xdma0_user 0x20 -w 0x1e0
 ../tools/reg_rw /dev/xdma0_user 0x30 -w 0x1e0
-
+sleep 1
 
 echo "apply settings"
 ../tools/reg_rw /dev/xdma0_user 0x80 -w 0x01
 sleep 1
-
-../tools/reg_rw /dev/xdma0_user 0x84 -w 
-
 echo "go reset"
 ../tools/reg_rw /dev/xdma0_user 0x10 -w 0x00
 sleep 1
+../tools/reg_rw /dev/xdma0_user 0x80 -w 0x01
+sleep 1
 ../tools/reg_rw /dev/xdma0_user 0x10 -w 0x01
+sleep 1
+../tools/reg_rw /dev/xdma0_user 0x80 -w 0x01
+sleep 1
+#../tools/reg_rw /dev/xdma0_user 0x80 -w 0x00
+#../tools/reg_rw /dev/xdma0_user 0x84 -w 0x00
 
 
 echo " DONE"
