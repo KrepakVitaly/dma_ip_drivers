@@ -549,7 +549,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 			sg_dma_len(sg)); 
 
     w = 0x00;
-    iowrite32(w, reg+0x10);
+    //iowrite32(w, reg+0x10);
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
     w = 0x01;
     //iowrite32(w, reg+0x10);
