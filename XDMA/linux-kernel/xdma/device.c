@@ -480,7 +480,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 {
     struct xdma_cdev *xcdev = dev->xcdev;
 	int rv;
-	size_t res = 0;
+	ssize_t res = 0;
 
     void __iomem *reg;
 	u32 w;
@@ -554,19 +554,20 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     }
 
 
-    w = 0x00;
+    //w = 0x00;
     //iowrite32(w, reg+0x10);
-    pr_info("reset active 0, iowrite32 rv %d \n", rv);
-    w = 0x01;
+    //pr_info("reset active 0, iowrite32 rv %d \n", rv);
+    //w = 0x01;
     //iowrite32(w, reg+0x10);
     //pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
-    w = 0x00;
+
+    //w = 0x00;
     //iowrite32(w, reg+0x10);
-    pr_info("reset active 0, iowrite32 rv %d \n", rv);
+    pr_info("xdma_xfer_submit return value %l \n", res);
 
     sg = vbuf_sgt->sgl;
     pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
@@ -844,7 +845,7 @@ int submitter_thread(void *data)
             dev->output_fps.numerator = 1001;
             dev->output_fps.denominator = 50050;
         }
-        timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator - 9;
+        timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator;
         if (!timeout_ms) {
             dev->output_fps.numerator = 1001;
             dev->output_fps.denominator = 50050;
