@@ -567,7 +567,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     //w = 0x00;
     //iowrite32(w, reg+0x10);
-    pr_info("xdma_xfer_submit return value %l \n", res);
+    pr_info("xdma_xfer_submit return value %d \n", res);
 
     sg = vbuf_sgt->sgl;
     pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
