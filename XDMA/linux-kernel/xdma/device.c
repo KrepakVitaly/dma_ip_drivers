@@ -797,14 +797,16 @@ int submitter_thread(void *data)
 
     }
 
-    //iowrite32(w, reg);
     w = 0x00;
     iowrite32(w, reg+0x10);
-    pr_info("reset active 0, iowrite32 rv %d \n", rv);
-    //w = 0x01;
-    //iowrite32(w, reg+0x10);
-    //pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
-	
+    w = 0x01;
+    iowrite32(w, reg+0x80);
+    pr_info("reset device before start streaming %d \n", rv);
+    w = 0x01;
+    iowrite32(w, reg+0x10);
+    w = 0x01;
+    iowrite32(w, reg+0x80);
+    
 
     while (!kthread_should_stop()) {
         struct vcam_out_buffer *buf;
