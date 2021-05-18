@@ -553,20 +553,20 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
         pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
     }
 
-
-    //w = 0x00;
-    //iowrite32(w, reg+0x10);
-    //pr_info("reset active 0, iowrite32 rv %d \n", rv);
-    //w = 0x01;
-    //iowrite32(w, reg+0x10);
-    //pr_info("reset non-active 1, iowrite32 rv %d \n", rv);
+    pr_info("reset device  \n");
+    w = 0x01;
+    iowrite32(w, reg+0x10);
+    w = 0x01;
+    iowrite32(w, reg+0x80);
 
 	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
 				0, write ? 10 * 1000 :
 					   10 * 1000);
 
-    //w = 0x00;
-    //iowrite32(w, reg+0x10);
+    w = 0x00;
+    iowrite32(w, reg+0x10);
+    w = 0x01;
+    iowrite32(w, reg+0x80);
     pr_info("xdma_xfer_submit return value %d \n", res);
 
     sg = vbuf_sgt->sgl;
