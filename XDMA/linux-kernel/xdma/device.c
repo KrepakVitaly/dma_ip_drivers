@@ -541,12 +541,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     //sgt_dump(vbuf_sgt);
 
 	pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
-		vbuf_sgt->orig_nents);
+		vbuf_sgt->orig_nents, sg_virt(sg));
+        
 
 	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
-		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u.\n", i, sg,
+		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
 			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
 			sg_dma_len(sg), sg_virt(sg)); 
+
 
     w = 0x00;
     //iowrite32(w, reg+0x10);
@@ -563,8 +565,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     pr_info("reset active 0, iowrite32 rv %d \n", rv);
 
     sg = vbuf_sgt->sgl;
-    pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u.\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
-    vbuf_sgt->orig_nents);
+    pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
+    vbuf_sgt->orig_nents, sg_virt(sg));
 
 
 
