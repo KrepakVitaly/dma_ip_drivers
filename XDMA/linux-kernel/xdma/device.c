@@ -543,12 +543,15 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
 		vbuf_sgt->orig_nents, sg_virt(sg));
 
-    pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
+    
 
 	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
+    {
 		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
 			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
 			sg_dma_len(sg), sg_virt(sg)); 
+        pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
+    }
 
 
     w = 0x00;
@@ -572,9 +575,12 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
 
 	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
+    {
 		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
 			sg_page(sg), sg->offset, sg->length, sg_virt(sg), sg_dma_address(sg),
 			sg_dma_len(sg), sg_virt(sg)); 
+        pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
+    }
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
