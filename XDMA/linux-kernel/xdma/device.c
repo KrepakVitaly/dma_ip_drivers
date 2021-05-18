@@ -844,7 +844,7 @@ int submitter_thread(void *data)
             dev->output_fps.numerator = 1001;
             dev->output_fps.denominator = 50050;
         }
-        timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator;
+        timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator - 9;
         if (!timeout_ms) {
             dev->output_fps.numerator = 1001;
             dev->output_fps.denominator = 50050;
