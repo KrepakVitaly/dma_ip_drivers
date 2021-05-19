@@ -865,7 +865,7 @@ int submitter_thread(void *data)
             
         } else if (timeout > computation_time_jiff) {
             
-            schedule_timeout_interruptible(timeout - computation_time_jiff);
+            //schedule_timeout_interruptible(timeout - computation_time_jiff);
         }
         pr_info("timeout_ms %d, timeout %d \n", timeout_ms, timeout);
         pr_info("computation_time_jiff %d \n", computation_time_jiff);
