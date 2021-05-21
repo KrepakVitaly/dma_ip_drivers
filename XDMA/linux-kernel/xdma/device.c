@@ -856,7 +856,7 @@ int submitter_thread(void *data)
         /* Compute timeout and update FPS */
         computation_time_jiff = jiffies - computation_time_jiff;
         timeout = msecs_to_jiffies(timeout_ms);
-        int computation_time_ms = msecs_to_jiffies(computation_time_jiff);
+        int computation_time_ms = jiffies_to_msecs(computation_time_jiff);
         pr_info("computation_time_ms %d \n", computation_time_ms);
         pr_info("schedule_timeout_interruptible %d \n", timeout - computation_time_jiff);
         if (computation_time_jiff > timeout) {
@@ -868,12 +868,12 @@ int submitter_thread(void *data)
             //schedule_timeout_interruptible(timeout - computation_time_jiff);
         }
         pr_info("timeout_ms %d, timeout %d \n", timeout_ms, timeout);
+        pr_info("jiffies %d \n", jiffies);
         pr_info("computation_time_jiff %d \n", computation_time_jiff);
         pr_info("dev->output_fps.numerator %d \n", dev->output_fps.numerator);
         pr_info("dev->output_fps.denominator %d \n", dev->output_fps.denominator);
         
-        pr_info("jiffies %d \n", jiffies);
-        pr_info("computation_time_jiff %d \n", computation_time_jiff);
+
     }
 
     return 0;
