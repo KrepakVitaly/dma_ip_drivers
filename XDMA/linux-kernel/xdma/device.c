@@ -869,6 +869,7 @@ int submitter_thread(void *data)
         //}
         pr_info("timeout_ms %d, timeout %d \n", timeout_ms, timeout);
         pr_info("jiffies %d \n", jiffies);
+        pr_info("get_jiffies_64 %d \n", get_jiffies_64());
         pr_info("computation_time_jiff %d \n", computation_time_jiff);
         pr_info("dev->output_fps.numerator %d \n", dev->output_fps.numerator);
         pr_info("dev->output_fps.denominator %d \n", dev->output_fps.denominator);
