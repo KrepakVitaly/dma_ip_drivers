@@ -524,11 +524,13 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     size_t rowsize = dev->output_format.bytesperline;
     size_t rows = dev->output_format.height;
 
-	pr_info("vbuf_sgt 0x%p, vbuf len %d, priv 0x%p, vcam_out_buffer 0x%p, %llu, pos %llu, W %d, %s.\n",
-		vbuf_sgt, sg_dma_len(vbuf_sgt->sgl), xcdev, buf, (u64)count, (u64)pos, write,
-		engine->name);
+    #ifdef __VERBOSE_DEBUG__
+        pr_info("vbuf_sgt 0x%p, vbuf len %d, priv 0x%p, vcam_out_buffer 0x%p, %llu, pos %llu, W %d, %s.\n",
+            vbuf_sgt, sg_dma_len(vbuf_sgt->sgl), xcdev, buf, (u64)count, (u64)pos, write,
+            engine->name);
 
-    pr_info("size %d, rowsize %d, rows %d\n", size, rowsize, rows);
+        pr_info("size %d, rowsize %d, rows %d\n", size, rowsize, rows);
+    #endif
 	
 
 	if ((write && engine->dir != DMA_TO_DEVICE) ||
@@ -540,18 +542,18 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     //sgt_dump(vbuf_sgt);
 
-	pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
-		vbuf_sgt->orig_nents, sg_virt(sg));
+    #ifdef __VERBOSE_DEBUG__
+        pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
+            vbuf_sgt->orig_nents, sg_virt(sg));
 
-    
-
-	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
-    {
-		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
-			sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
-			sg_dma_len(sg), sg_virt(sg)); 
-        pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
-    }
+        for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
+        {
+            pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
+                sg_page(sg), sg->offset, sg->length, sg_dma_address(sg),
+                sg_dma_len(sg), sg_virt(sg)); 
+            pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
+        }
+    #endif
 
     /*pr_info("reset device  \n");
     w = 0x01;
@@ -567,21 +569,23 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     iowrite32(w, reg+0x10);
     w = 0x01;
     iowrite32(w, reg+0x80);*/
-    pr_info("xdma_xfer_submit return value %d \n", res);
+    #ifdef __VERBOSE_DEBUG__
+        pr_info("xdma_xfer_submit return value %d \n", res);
 
-    sg = vbuf_sgt->sgl;
-    pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
-    vbuf_sgt->orig_nents, sg_virt(sg));
+        sg = vbuf_sgt->sgl;
+        pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
+        vbuf_sgt->orig_nents, sg_virt(sg));
 
 
 
-	for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
-    {
-		pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
-			sg_page(sg), sg->offset, sg->length, sg_virt(sg), sg_dma_address(sg),
-			sg_dma_len(sg), sg_virt(sg)); 
-        pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
-    }
+        for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
+        {
+            pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
+                sg_page(sg), sg->offset, sg->length, sg_virt(sg), sg_dma_address(sg),
+                sg_dma_len(sg), sg_virt(sg)); 
+            pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
+        }
+    #endif
 
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
@@ -857,8 +861,7 @@ int submitter_thread(void *data)
         computation_time_jiff = jiffies - computation_time_jiff;
         timeout = msecs_to_jiffies(timeout_ms);
         int computation_time_ms = jiffies_to_msecs(computation_time_jiff);
-        pr_info("computation_time_ms %d \n", computation_time_ms);
-        pr_info("schedule_timeout_interruptible %d \n", timeout - computation_time_jiff);
+
         //if (computation_time_jiff > timeout) {
             dev->output_fps.numerator = 1001;
             dev->output_fps.denominator = 1000 * computation_time_ms;
@@ -867,12 +870,16 @@ int submitter_thread(void *data)
             
             //schedule_timeout_interruptible(timeout - computation_time_jiff);
         //}
-        pr_info("timeout_ms %d, timeout %d \n", timeout_ms, timeout);
-        pr_info("jiffies %d \n", jiffies);
-        pr_info("get_jiffies_64 %d \n", get_jiffies_64());
-        pr_info("computation_time_jiff %d \n", computation_time_jiff);
-        pr_info("dev->output_fps.numerator %d \n", dev->output_fps.numerator);
-        pr_info("dev->output_fps.denominator %d \n", dev->output_fps.denominator);
+        #ifdef __VERBOSE_DEBUG__
+            pr_info("computation_time_ms %d \n", computation_time_ms);
+            pr_info("schedule_timeout_interruptible %d \n", timeout - computation_time_jiff);
+            pr_info("timeout_ms %d, timeout %d \n", timeout_ms, timeout);
+            pr_info("jiffies %d \n", jiffies);
+            pr_info("get_jiffies_64_endframe %d \n", get_jiffies_64());
+            pr_info("computation_time_jiff %d \n", computation_time_jiff);
+            pr_info("dev->output_fps.numerator %d \n", dev->output_fps.numerator);
+            pr_info("dev->output_fps.denominator %d \n", dev->output_fps.denominator);
+        #endif
     }
 
     return 0;
