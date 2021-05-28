@@ -524,8 +524,11 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
             cb->write ? 10 * 1000 :
                     10 * 1000);
 
-    kfree(cb);
+    
     kfree(cb->buf);
+    kfree(cb);
+    kfree(caio->iocb->ki_filp);
+    kfree(caio->iocb);
     kfree(caio);
 
 
@@ -558,17 +561,24 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     size_t count = 1;
     loff_t pos = 0;
     bool write = 0;
-    struct kiocb *iocb = kzalloc(count * (sizeof(struct kiocb)), GFP_KERNEL);
+    struct kiocb *iocb = kzalloc((sizeof(struct kiocb)), GFP_KERNEL);
 
 
     caio = kzalloc( (sizeof(struct cdev_async_io)), GFP_KERNEL);
+
     memset(caio, 0, sizeof(struct cdev_async_io));
+    
+    iocb->ki_filp = kzalloc( (sizeof(struct file)), GFP_KERNEL);
 	iocb->ki_filp->private_data = xcdev;
+
+    
 
     struct xdma_io_cb * cb = kzalloc(count * (sizeof(struct xdma_io_cb)), GFP_KERNEL);
 
     memset(cb, 0, sizeof(struct xdma_io_cb));
     caio->cb = cb;
+    iocb->private = caio;
+	caio->iocb = iocb;
 	caio->write = false;
 	caio->cancel = false;
 	caio->req_cnt = 1;
