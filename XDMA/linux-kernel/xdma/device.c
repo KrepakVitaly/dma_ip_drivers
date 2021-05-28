@@ -626,9 +626,11 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
             pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
         }
     #endif
-
+	if (engine->cmplthp)
+		xdma_kthread_wakeup(engine->cmplthp);
+        
     buf->vb.timestamp = ktime_get_ns();
-    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+    //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
 }
 
 static void copy_scale(unsigned char *dst,
