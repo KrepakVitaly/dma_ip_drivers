@@ -666,7 +666,11 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     res = xdma_xfer_submit_nowait((void *)cb, xdev,
 					engine->channel, write,
 					(u64)pos, vbuf_sgt,
-					0, c2h_timeout * 1000);
+					1, c2h_timeout * 1000);
+    w = 0x01;
+    iowrite32(w, reg+0x10);
+    w = 0x01;
+    iowrite32(w, reg+0x80);
 
     #ifdef __VERBOSE_DEBUG__
         pr_info("xdma_xfer_submit return value %d \n", res);
@@ -908,10 +912,7 @@ int submitter_thread(void *data)
     w = 0x01;
     iowrite32(w, reg+0x80);
     pr_info("reset device before start streaming %d \n", rv);
-    w = 0x01;
-    iowrite32(w, reg+0x10);
-    w = 0x01;
-    iowrite32(w, reg+0x80);
+
     
 
     while (!kthread_should_stop()) {
