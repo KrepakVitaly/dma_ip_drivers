@@ -14,6 +14,7 @@
 #include "xdma_cdev.h"
 #include "cdev_sgdma.h"
 #include "xdma_thread.h"
+#include <linux/aio.h>
 
 extern const char *vcam_dev_name;
 extern unsigned char allow_pix_conversion;
@@ -484,26 +485,62 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 	struct xdma_engine *engine;
 	struct xdma_dev *xdev;
 	struct xdma_io_cb *cb = (struct xdma_io_cb *)cb_hndl;
-	//struct cdev_async_io *caio = (struct cdev_async_io *)cb->private;
+	struct cdev_async_io *caio = (struct cdev_async_io *)cb->private;
 	ssize_t numbytes = 0;
 	ssize_t res, res2;
 	int lock_stat;
 	int rv;
 
+	if (caio == NULL) {
+		pr_err("Invalid work struct\n");
+		return;
+	}
+
+	xcdev = (struct xdma_cdev *)caio->iocb->ki_filp->private_data;
+	rv = xcdev_check(__func__, xcdev, 1);
+	if (rv < 0)
+		return;
+
+	/* Safeguarding for cancel requests */
+	lock_stat = spin_trylock(&caio->lock);
+	if (!lock_stat) {
+		pr_err("caio lock not acquired\n");
+		goto skip_dev_lock;
+	}
+
+	if (false != caio->cancel) {
+		pr_err("skipping aio\n");
+		goto skip_tran;
+	}
+
+	engine = xcdev->engine;
+	xdev = xcdev->xdev;
     pr_info("nowait_io_handler\n");
 
-    	if (!err)
-		numbytes = xdma_xfer_completion((void *)cb, xdev,
-				engine->channel, cb->write, cb->ep_addr,
-				&cb->sgt, 1, 
-				cb->write ? 10 * 1000 :
-					    10 * 1000);
+    if (!err)
+    numbytes = xdma_xfer_completion((void *)cb, xdev,
+            engine->channel, cb->write, cb->ep_addr,
+            &cb->sgt, 1, 
+            cb->write ? 10 * 1000 :
+                    10 * 1000);
 
-        kfree(cb);
-        kfree(cb->buf);
+    kfree(cb);
+    kfree(cb->buf);
+    kfree(caio);
+
+
+
+skip_tran:
+
+	return;
+
+skip_dev_lock:
+
 
     return;
 }
+
+
 
 static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
@@ -517,19 +554,31 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     int i;
     struct xdma_dev *xdev = xcdev->xdev;
     struct xdma_engine *engine = xcdev->engine;
+    struct cdev_async_io *caio;
     size_t count = 1;
     loff_t pos = 0;
     bool write = 0;
+    struct kiocb *iocb = kzalloc(count * (sizeof(struct kiocb)), GFP_KERNEL);
+
+
+    caio = kzalloc( (sizeof(struct cdev_async_io)), GFP_KERNEL);
+    memset(caio, 0, sizeof(struct cdev_async_io));
+	iocb->ki_filp->private_data = xcdev;
+
     struct xdma_io_cb * cb = kzalloc(count * (sizeof(struct xdma_io_cb)), GFP_KERNEL);
 
     memset(cb, 0, sizeof(struct xdma_io_cb));
+    caio->cb = cb;
+	caio->write = false;
+	caio->cancel = false;
+	caio->req_cnt = 1;
     
 
     cb->buf = kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
     cb->len = 921600;
     cb->ep_addr = (u64)pos;
-    cb->write = 0;
-    cb->private = NULL;
+    cb->write = false;
+    cb->private = caio;
     cb->io_done = nowait_io_handler;
 
 	rv = xcdev_check(__func__, xcdev, 0);
