@@ -480,7 +480,28 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 
 static void nowait_io_handler(unsigned long  cb_hndl, int err)
 {
+    struct xdma_cdev *xcdev;
+	struct xdma_engine *engine;
+	struct xdma_dev *xdev;
+	struct xdma_io_cb *cb = (struct xdma_io_cb *)cb_hndl;
+	//struct cdev_async_io *caio = (struct cdev_async_io *)cb->private;
+	ssize_t numbytes = 0;
+	ssize_t res, res2;
+	int lock_stat;
+	int rv;
+
     pr_info("nowait_io_handler\n");
+
+    	if (!err)
+		numbytes = xdma_xfer_completion((void *)cb, xdev,
+				engine->channel, cb->write, cb->ep_addr,
+				&cb->sgt, 1, 
+				cb->write ? 10 * 1000 :
+					    10 * 1000);
+
+        kfree(cb);
+        kfree(cb->buf);
+
     return;
 }
 
@@ -499,17 +520,17 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     size_t count = 1;
     loff_t pos = 0;
     bool write = 0;
-    struct xdma_io_cb cb;
+    struct xdma_io_cb * cb = kzalloc(count * (sizeof(struct xdma_io_cb)), GFP_KERNEL);
 
-    memset(&cb, 0, sizeof(struct xdma_io_cb));
+    memset(cb, 0, sizeof(struct xdma_io_cb));
     
 
-    cb.buf = NULL;// kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
-    cb.len = 921600;
-    cb.ep_addr = (u64)pos;
-    cb.write = 0;
-    cb.private = NULL;
-    cb.io_done = nowait_io_handler;
+    cb->buf = kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
+    cb->len = 921600;
+    cb->ep_addr = (u64)pos;
+    cb->write = 0;
+    cb->private = NULL;
+    cb->io_done = nowait_io_handler;
 
 	rv = xcdev_check(__func__, xcdev, 0);
 	if (rv < 0){
@@ -533,7 +554,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
+    pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
     struct scatterlist *sg = vbuf_sgt->sgl;
+
+    memcpy((void*)&cb->sgt, (void*)vbuf_sgt, sizeof(struct sg_table));
 
 
 
@@ -580,7 +604,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	//			0, write ? 10 * 1000 :
 	//				   10 * 1000);
 
-    rv = xdma_xfer_submit_nowait((void *)&cb, xdev,
+    rv = xdma_xfer_submit_nowait((void *)cb, xdev,
 					engine->channel, write,
 					(u64)pos, vbuf_sgt,
 					0, c2h_timeout * 1000);
