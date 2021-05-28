@@ -873,8 +873,6 @@ int submitter_thread(void *data)
         pr_info("computation_time_jiff %d \n", computation_time_jiff);
         pr_info("dev->output_fps.numerator %d \n", dev->output_fps.numerator);
         pr_info("dev->output_fps.denominator %d \n", dev->output_fps.denominator);
-        
-
     }
 
     return 0;
