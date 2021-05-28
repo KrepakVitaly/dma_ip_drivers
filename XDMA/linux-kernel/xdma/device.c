@@ -604,7 +604,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	//			0, write ? 10 * 1000 :
 	//				   10 * 1000);
 
-    rv = xdma_xfer_submit_nowait((void *)cb, xdev,
+    res = xdma_xfer_submit_nowait((void *)cb, xdev,
 					engine->channel, write,
 					(u64)pos, vbuf_sgt,
 					0, c2h_timeout * 1000);
@@ -628,7 +628,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     #endif
 	if (engine->cmplthp)
 		xdma_kthread_wakeup(engine->cmplthp);
-        
+
     buf->vb.timestamp = ktime_get_ns();
     //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
 }
