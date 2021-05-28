@@ -475,6 +475,15 @@ static void submit_noinput_buffer(struct vcam_out_buffer *buf,
 
 
 
+
+
+
+static void nowait_io_handler(unsigned long  cb_hndl, int err)
+{
+    pr_info("nowait_io_handler\n");
+    return;
+}
+
 static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
 {
@@ -487,6 +496,20 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     int i;
     struct xdma_dev *xdev = xcdev->xdev;
     struct xdma_engine *engine = xcdev->engine;
+    size_t count = 1;
+    loff_t pos = 0;
+    bool write = 0;
+    struct xdma_io_cb cb;
+
+    memset(&cb, 0, sizeof(struct xdma_io_cb));
+    
+
+    cb.buf = kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);;
+    cb.len = 921600;
+    cb.ep_addr = (u64)pos;
+    cb.write = 0;
+    cb.private = NULL;
+    cb.io_done = nowait_io_handler;
 
 	rv = xcdev_check(__func__, xcdev, 0);
 	if (rv < 0){
@@ -511,9 +534,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
     struct scatterlist *sg = vbuf_sgt->sgl;
-    size_t count = 1;
-    loff_t pos = 0;
-    bool write = 0;
+
 
 
 	if (xcdev == NULL) {
@@ -555,20 +576,15 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
         }
     #endif
 
-    /*pr_info("reset device  \n");
-    w = 0x01;
-    iowrite32(w, reg+0x10);
-    w = 0x01;
-    iowrite32(w, reg+0x80);*/
+	//res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
+	//			0, write ? 10 * 1000 :
+	//				   10 * 1000);
 
-	res = xdma_xfer_submit(xdev, engine->channel, write, pos, vbuf_sgt,
-				0, write ? 10 * 1000 :
-					   10 * 1000);
+    rv = xdma_xfer_submit_nowait((void *)&cb, xdev,
+					engine->channel, write,
+					(u64)pos, vbuf_sgt,
+					0, c2h_timeout * 1000);
 
-    /*w = 0x00;
-    iowrite32(w, reg+0x10);
-    w = 0x01;
-    iowrite32(w, reg+0x80);*/
     #ifdef __VERBOSE_DEBUG__
         pr_info("xdma_xfer_submit return value %d \n", res);
 
