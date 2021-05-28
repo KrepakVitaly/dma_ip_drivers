@@ -3199,8 +3199,9 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 			engine->name, channel, write, engine->dir, dir);
 		return -EINVAL;
 	}
-
-	pr_info("pci_map_sg, sgt 0x%p, sgl 0x%p orig_nents %d, sgl.len %d \n", sgt, sg, sgt->orig_nents, sg->length );
+	#ifdef __VERBOSE_DEBUG__
+		pr_info("pci_map_sg, sgt 0x%p, sgl 0x%p orig_nents %d, sgl.len %d \n", sgt, sg, sgt->orig_nents, sg->length );
+	#endif
 	if (!dma_mapped) {
 		nents = pci_map_sg(xdev->pdev, sg, sgt->orig_nents, dir);
 		if (!nents) {
@@ -3281,7 +3282,9 @@ ssize_t xdma_xfer_submit(void *dev_hndl, int channel, bool write, u64 ep_addr,
 				(xfer->state != TRANSFER_STATE_SUBMITTED));
 		}
 
+#ifdef __VERBOSE_DEBUG__
 		pr_info("spin_lock_irqsave start\n");
+		#endif
 
 
 		spin_lock_irqsave(&engine->lock, flags);

@@ -103,8 +103,9 @@ static int vcam_out_buffer_prepare(struct vb2_buffer *vb)
     struct vcam_device *dev = vb2_get_drv_priv(vb->vb2_queue);
     unsigned long size = dev->output_format.sizeimage;
 
+#ifdef __VERBOSE_DEBUG__
     pr_info("vcam_out_buffer_prepare vb2_plane_size %d \n", vb2_plane_size(vb, 0));
-
+#endif
     if (vb2_plane_size(vb, 0) < size) {
         pr_err(KERN_ERR "data will not fit into buffer\n");
         return -EINVAL;
