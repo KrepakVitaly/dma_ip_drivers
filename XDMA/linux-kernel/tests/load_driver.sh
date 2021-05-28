@@ -61,9 +61,9 @@ fi
 ../tools/reg_rw /dev/xdma0_user 0x20 -w 0x1e0
 ../tools/reg_rw /dev/xdma0_user 0x30 -w 0x1e0
 ../tools/reg_rw /dev/xdma0_user 0x40 -w 0x32dcd5
-../tools/reg_rw /dev/xdma0_user 0x50 -w 0x05
+../tools/reg_rw /dev/xdma0_user 0x50 -w 0x02
 
-../tools/reg_rw /dev/xdma0_user 0x60 -w 0x01
+../tools/reg_rw /dev/xdma0_user 0x60 -w 0x00
 
 ../tools/reg_rw /dev/xdma0_user 0x80 -w 0x01
 
