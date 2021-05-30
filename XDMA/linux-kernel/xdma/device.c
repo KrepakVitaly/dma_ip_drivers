@@ -529,7 +529,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		//return -EPROTO;
 	/* first address is BAR base plus file position offset */
 	reg = xdev->bar[xcdev->bar];
-	for (i = 0x10; i < 0x90; i=i+0x10)
+	for (i = 0x10; i < 0xA0; i=i+0x10)
     {
         w = ioread32(reg+i);
         dbg_sg("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n",
@@ -537,6 +537,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     }
     dbg_sg("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x84, w);
+
+    w = ioread32(reg+0x94);
+    pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, w);
 
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
@@ -833,13 +836,20 @@ int submitter_thread(void *data)
 
 
 	reg = xdev->bar[xcdev->bar];
-	for (i = 0x10; i < 0x70; i=i+0x10)
+	for (i = 0x10; i < 0xA0; i=i+0x10)
     {
         w = ioread32(reg+i);
         dbg_sg("%s(@%p, count=%ld, pos=%d) value = 0x%08x\n",
                 __func__, reg, (long)4, (int)i, w);
 
     }
+
+    w = 0x01;
+    iowrite32(w, reg+0x90);
+    w = 0x00;
+    iowrite32(w, reg+0x90);
+    pr_info("reset t_ready counter status before start streaming %d \n", rv);
+
 
     w = 0x00;
     iowrite32(w, reg+0x10);
@@ -909,6 +919,7 @@ int submitter_thread(void *data)
             {
                 start_video =  3;
                 //schedule_timeout_interruptible(timeout - computation_time_jiff);
+                schedule_timeout_interruptible(timeout - computation_time_jiff);
             }
         }
         
