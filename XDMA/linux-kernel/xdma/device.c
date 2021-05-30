@@ -469,7 +469,7 @@ skip_dev_lock:
     return;
 }
 
-
+uint8_t start_video = 0; 
 
 static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                                   struct vcam_device *dev)
@@ -594,10 +594,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 					engine->channel, write,
 					(u64)pos, vbuf_sgt,
 					1, c2h_timeout * 1000);
+
+    if (start_video >= 3)
+    {
     w = 0x01;
     iowrite32(w, reg+0x10);
     w = 0x01;
     iowrite32(w, reg+0x80);
+    }
 
     #ifdef __VERBOSE_DEBUG__
         pr_info("xdma_xfer_submit return value %d \n", res);
@@ -816,6 +820,7 @@ int submitter_thread(void *data)
     int i;
     struct xdma_cdev *xcdev = dev->xcdev;
     struct xdma_dev *xdev = xcdev->xdev;
+    start_video = 0;
 
 	rv = xcdev_check(__func__, xcdev, 0);
 	if (rv < 0)
@@ -901,6 +906,9 @@ int submitter_thread(void *data)
             
             schedule_timeout_interruptible(timeout - computation_time_jiff);
         }
+        start_video++;
+        if (start_video >= 3)
+            start_video =  3;
         #ifdef __VERBOSE_DEBUG__
             pr_info("computation_time_ms %d \n", computation_time_ms);
             pr_info("schedule_timeout_interruptible %d \n", timeout - computation_time_jiff);
