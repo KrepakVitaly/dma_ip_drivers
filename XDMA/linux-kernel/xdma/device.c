@@ -908,7 +908,7 @@ int submitter_thread(void *data)
             if (start_video >= 3)
             {
                 start_video =  3;
-                schedule_timeout_interruptible(timeout - computation_time_jiff);
+                //schedule_timeout_interruptible(timeout - computation_time_jiff);
             }
         }
         
