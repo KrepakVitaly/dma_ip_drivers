@@ -857,7 +857,7 @@ int submitter_thread(void *data)
         int computation_time_jiff = jiffies;
         spin_lock_irqsave(&dev->out_q_slock, flags);
         if (list_empty(&q->active)) {
-            pr_info("Buffer queue is empty\n");
+            //pr_info("Buffer queue is empty\n");
             spin_unlock_irqrestore(&dev->out_q_slock, flags);
             goto have_a_nap;
         }
