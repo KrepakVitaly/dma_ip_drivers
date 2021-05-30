@@ -276,6 +276,7 @@ struct xdma_io_cb {
 	void __user *buf;
 	size_t len;
 	void *private;
+	void *private_videobuf;
 	unsigned int pages_nr;
 	struct sg_table sgt;
 	struct page **pages;

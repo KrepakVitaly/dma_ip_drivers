@@ -211,7 +211,7 @@ static int vcam_enum_frameintervals(struct file *file,
     frm_step->max.numerator = 1001;
     frm_step->max.denominator = 1;
     frm_step->step.numerator = 1001;
-    frm_step->step.denominator = 50050;
+    frm_step->step.denominator = 23800;
 
     return 0;
 }
@@ -406,78 +406,6 @@ static inline void yuyv_to_rgb24_one_pix(void *dst,
     rgb[2] = (unsigned char) b;
 }
 
-static void submit_noinput_buffer(struct vcam_out_buffer *buf,
-                                  struct vcam_device *dev)
-{
-    
-    void *vbuf_ptr = vb2_plane_vaddr(&buf->vb, 0);
-    char __user *buf_user = (char*) vbuf_ptr;
-    bool write = 0;
-
-	int rv;
-	ssize_t res = 0;
-	struct xdma_cdev *xcdev = dev->xcdev;
-	struct xdma_dev *xdev;
-	struct xdma_engine *engine;
-	struct xdma_io_cb cb;
-    size_t count = 0x61410;
-    loff_t pos = 0;
-    //size_t size = dev->output_format.sizeimage;
-
-    //buf->vb.timestamp = ktime_get_ns();
-    //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
-    //return;
-
-	rv = xcdev_check(__func__, xcdev, 1);
-	if (rv < 0)
-		return;// rv;
-	xdev = xcdev->xdev;
-	engine = xcdev->engine;
-
-	dbg_tfr("vbuf_ptr 0x%p, priv 0x%p, buf 0x%p,%llu, pos %llu, W %d, %s.\n",
-		vbuf_ptr, xcdev, buf_user, (u64)count, (u64)pos, write,
-		engine->name);
-
-	if ((write && engine->dir != DMA_TO_DEVICE) ||
-	    (!write && engine->dir != DMA_FROM_DEVICE)) {
-		pr_err("r/w mismatch. W %d, dir %d.\n",
-			write, engine->dir);
-		return;// -EINVAL;
-	}
-
-	rv = check_transfer_align(engine, buf_user, count, pos, 1);
-	if (rv) {
-		pr_info("Invalid transfer alignment detected\n");
-		return;// rv;
-	}
-
-	memset(&cb, 0, sizeof(struct xdma_io_cb));
-	cb.buf = (char __user *)buf_user;
-	cb.len = count;
-	cb.ep_addr = (u64)pos;
-	cb.write = write;
-	rv = char_sgdma_map_user_buf_to_sgl(&cb, write);
-	if (rv < 0)
-		return;// rv;
-
-	res = xdma_xfer_submit(xdev, engine->channel, write, pos, &cb.sgt,
-				0, write ? h2c_timeout * 1000 :
-					   c2h_timeout * 1000);
-
-	char_sgdma_unmap_user_buf(&cb, write);
-
-	//return;// res;
-
-
-
-    buf->vb.timestamp = ktime_get_ns();
-    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
-}
-
-
-
-
-
 
 static void nowait_io_handler(unsigned long  cb_hndl, int err)
 {
@@ -486,6 +414,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 	struct xdma_dev *xdev;
 	struct xdma_io_cb *cb = (struct xdma_io_cb *)cb_hndl;
 	struct cdev_async_io *caio = (struct cdev_async_io *)cb->private;
+    struct vcam_out_buffer *buf = (struct vcam_out_buffer *) cb->private_videobuf;
 	ssize_t numbytes = 0;
 	ssize_t res, res2;
 	int lock_stat;
@@ -524,6 +453,8 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
             cb->write ? 10 * 1000 :
                     10 * 1000);
 
+    buf->vb.timestamp = ktime_get_ns();
+    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     
     kfree(cb->buf);
     kfree(cb);
@@ -531,15 +462,10 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     kfree(caio->iocb);
     kfree(caio);
 
-
-
 skip_tran:
-
 	return;
 
 skip_dev_lock:
-
-
     return;
 }
 
@@ -590,6 +516,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     cb->write = false;
     cb->private = caio;
     cb->io_done = nowait_io_handler;
+    cb->private_videobuf = buf;
 
 	rv = xcdev_check(__func__, xcdev, 0);
 	if (rv < 0){
@@ -692,8 +619,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	if (engine->cmplthp)
 		xdma_kthread_wakeup(engine->cmplthp);
 
-    buf->vb.timestamp = ktime_get_ns();
-    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+    //buf->vb.timestamp = ktime_get_ns();
+    //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
 }
 
 static void copy_scale(unsigned char *dst,
@@ -898,6 +825,8 @@ int submitter_thread(void *data)
 	//if (*pos & 3)
 		//return -EPROTO;
 	/* first address is BAR base plus file position offset */
+
+
 	reg = xdev->bar[xcdev->bar];
 	for (i = 0x10; i < 0x70; i=i+0x10)
     {
@@ -949,12 +878,12 @@ int submitter_thread(void *data)
     have_a_nap:
         if (!dev->output_fps.denominator) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 50050;
+            dev->output_fps.denominator = 23800;
         }
         timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator;
         if (!timeout_ms) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 50050;
+            dev->output_fps.denominator = 23800;
             timeout_ms =
                 (dev->output_fps.numerator * 1000)/ dev->output_fps.denominator ;
         }
@@ -1114,7 +1043,7 @@ struct vcam_device *create_vcam_device(size_t idx,
     }
 
     vcam->output_fps.numerator = 1001;
-    vcam->output_fps.denominator = 50050;
+    vcam->output_fps.denominator = 23800;
 
     return vcam;
 
