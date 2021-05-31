@@ -626,6 +626,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	if (engine->cmplthp)
 		xdma_kthread_wakeup(engine->cmplthp);
 
+    pr_info("submit_noinput_sg_buffer exit\n");
+
     //buf->vb.timestamp = ktime_get_ns();
     //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
 }
@@ -867,7 +869,7 @@ int submitter_thread(void *data)
         int computation_time_jiff = jiffies;
         spin_lock_irqsave(&dev->out_q_slock, flags);
         if (list_empty(&q->active)) {
-            //pr_info("Buffer queue is empty\n");
+            pr_info("Buffer queue is empty\n");
             spin_unlock_irqrestore(&dev->out_q_slock, flags);
             goto have_a_nap;
         }
