@@ -156,11 +156,14 @@ static void vcam_stop_streaming(struct vb2_queue *vb2_q)
     if (dev->sub_thr_id)
         kthread_stop(dev->sub_thr_id);
 
-
+    pr_info("counter_xfer_ready %d \n", counter_xfer_ready);
+    pr_info("counter_xfer_set %d \n", counter_xfer_set);
     while (counter_xfer_ready != counter_xfer_set)
     {
         
     }
+    pr_info("counter_xfer_ready2 %d \n", counter_xfer_ready);
+    pr_info("counter_xfer_set2 %d \n", counter_xfer_set);
 
     dev->sub_thr_id = NULL;
     /* Empty buffer queue */
