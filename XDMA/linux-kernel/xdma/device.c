@@ -211,7 +211,7 @@ static int vcam_enum_frameintervals(struct file *file,
     frm_step->max.numerator = 1001;
     frm_step->max.denominator = 1;
     frm_step->step.numerator = 1001;
-    frm_step->step.denominator = 23800;
+    frm_step->step.denominator = 50050;
 
     return 0;
 }
@@ -447,8 +447,6 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 		return;
 	}
 
-
-
 	engine = xcdev->engine;
 	xdev = xcdev->xdev;
     pr_info("nowait_io_handler\n");
@@ -541,6 +539,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 		//return -EPROTO;
 	/* first address is BAR base plus file position offset */
 	reg = xdev->bar[xcdev->bar];
+    #ifdef __VERBOSE_DEBUG__
 	for (i = 0x10; i < 0xA0; i=i+0x10)
     {
         w = ioread32(reg+i);
@@ -548,6 +547,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                 __func__, reg, (long)4, (int)i, w);
 
     }
+    #endif
     dbg_sg("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x84, w);
 
     w = ioread32(reg+0x94);
@@ -555,7 +555,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
-    pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
+    //pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
     struct scatterlist *sg = vbuf_sgt->sgl;
 
     memcpy((void*)&cb->sgt, (void*)vbuf_sgt, sizeof(struct sg_table));
@@ -639,7 +639,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	if (engine->cmplthp)
 		xdma_kthread_wakeup(engine->cmplthp);
 
-    pr_info("submit_noinput_sg_buffer exit\n");
+    //pr_info("submit_noinput_sg_buffer exit\n");
 
     //buf->vb.timestamp = ktime_get_ns();
     //vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
@@ -908,12 +908,12 @@ int submitter_thread(void *data)
     have_a_nap:
         if (!dev->output_fps.denominator) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 23800;
+            dev->output_fps.denominator = 50050;
         }
         timeout_ms = (dev->output_fps.numerator * 1000) / dev->output_fps.denominator;
         if (!timeout_ms) {
             dev->output_fps.numerator = 1001;
-            dev->output_fps.denominator = 23800;
+            dev->output_fps.denominator = 50050;
             timeout_ms =
                 (dev->output_fps.numerator * 1000)/ dev->output_fps.denominator ;
         }
@@ -933,9 +933,8 @@ int submitter_thread(void *data)
             if (start_video >= 2)
             {
                 start_video =  2;
-                //schedule_timeout_interruptible(timeout - computation_time_jiff);
-                schedule_timeout_interruptible(1);
             }
+            schedule_timeout_interruptible(timeout - computation_time_jiff);
         }
         
         #ifdef __VERBOSE_DEBUG__
@@ -1080,7 +1079,7 @@ struct vcam_device *create_vcam_device(size_t idx,
     }
 
     vcam->output_fps.numerator = 1001;
-    vcam->output_fps.denominator = 23800;
+    vcam->output_fps.denominator = 50050;
 
     return vcam;
 
