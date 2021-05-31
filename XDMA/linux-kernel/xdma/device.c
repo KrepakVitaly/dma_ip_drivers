@@ -421,7 +421,17 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 	int rv;
 
 	if (caio == NULL) {
-		pr_err("Invalid work struct\n");
+		pr_err("Invalid cdev_async_io struct\n");
+		return;
+	}
+
+    if (cdev_bypass_init == NULL) {
+		pr_err("Invalid xdma_io_cb struct\n");
+		return;
+	}
+
+    if (buf == NULL) {
+		pr_err("Invalid vcam_out_buffer struct\n");
 		return;
 	}
 
@@ -453,14 +463,20 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
             cb->write ? 10 * 1000 :
                     10 * 1000);
 
+
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     
-    kfree(cb->buf);
-    kfree(cb);
-    kfree(caio->iocb->ki_filp);
-    kfree(caio->iocb);
-    kfree(caio);
+    if (cb->buf != NULL)
+        kfree(cb->buf);
+    if (cb  != NULL)
+        kfree(cb);
+    if (caio->iocb->ki_filp != NULL)
+        kfree(caio->iocb->ki_filp);
+    if (caio->iocb != NULL)        
+        kfree(caio->iocb);
+    if (caio != NULL)
+        kfree(caio);
 
 skip_tran:
 	return;
