@@ -201,7 +201,7 @@ int vcam_out_videobuf2_setup(struct vcam_device *dev)
     q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
     q->ops = &vcam_vb2_ops;
     q->mem_ops = &vb2_dma_sg_memops;
-    q->min_buffers_needed = 4;
+    q->min_buffers_needed = 1;
     q->lock = &dev->vcam_mutex;
 
     return vb2_queue_init(q);
