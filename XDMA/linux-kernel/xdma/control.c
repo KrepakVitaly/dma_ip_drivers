@@ -211,8 +211,8 @@ static long control_ioctl(struct file *file,
 }
 
 static struct vcam_device_spec default_vcam_spec = {
-    .width = 640,
-    .height = 480,
+    .width = 1280,
+    .height = 1440,
     .pix_fmt = VCAM_PIXFMT_RGB24,
 };
 
