@@ -598,7 +598,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 					(u64)pos, vbuf_sgt,
 					1, c2h_timeout * 1000);
 
-    //if (start_video >= 3)
+    
     {
     w = 0x01;
     iowrite32(w, reg+0x10);
@@ -917,11 +917,11 @@ int submitter_thread(void *data)
         } else if (timeout > computation_time_jiff) {
             
             start_video++;
-            if (start_video >= 3)
+            if (start_video >= 7)
             {
-                start_video =  3;
+                start_video =  7;
                 //schedule_timeout_interruptible(timeout - computation_time_jiff);
-                //schedule_timeout_interruptible(1);
+                schedule_timeout_interruptible(2);
             }
         }
         
