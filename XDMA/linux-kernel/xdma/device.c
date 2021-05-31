@@ -421,7 +421,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 	int rv;
 
 	if (caio == NULL) {
-		pr_err("Invalid work struct\n");
+		pr_info("Invalid work struct\n");
 		return;
 	}
 
@@ -433,14 +433,21 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 	/* Safeguarding for cancel requests */
 	lock_stat = spin_trylock(&caio->lock);
 	if (!lock_stat) {
-		pr_err("caio lock not acquired\n");
+		pr_info("caio lock not acquired\n");
 		goto skip_dev_lock;
 	}
 
 	if (false != caio->cancel) {
-		pr_err("skipping aio\n");
+		pr_info("skipping aio\n");
 		goto skip_tran;
 	}
+
+	if (buf == NULL) {
+		pr_info("Invalid vcam_out_buffer struct\n");
+		return;
+	}
+
+
 
 	engine = xcdev->engine;
 	xdev = xcdev->xdev;
@@ -456,11 +463,16 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     buf->vb.timestamp = ktime_get_ns();
     vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     
-    kfree(cb->buf);
-    kfree(cb);
-    kfree(caio->iocb->ki_filp);
-    kfree(caio->iocb);
-    kfree(caio);
+    if (cb->buf != NULL)
+        kfree(cb->buf);
+    if (cb  != NULL)
+        kfree(cb);
+    if (caio->iocb->ki_filp != NULL)
+        kfree(caio->iocb->ki_filp);
+    if (caio->iocb != NULL)        
+        kfree(caio->iocb);
+    if (caio != NULL)
+        kfree(caio);
 
 skip_tran:
 	return;
@@ -601,10 +613,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     
     if (start_video == 2)
     {
-    w = 0x01;
-    iowrite32(w, reg+0x10);
-    w = 0x01;
-    iowrite32(w, reg+0x80);
+        w = 0x01;
+        iowrite32(w, reg+0x10);
+        w = 0x01;
+        iowrite32(w, reg+0x80);
     }
 
     #ifdef __VERBOSE_DEBUG__
