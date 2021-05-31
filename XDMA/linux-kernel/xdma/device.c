@@ -407,6 +407,10 @@ static inline void yuyv_to_rgb24_one_pix(void *dst,
 }
 
 
+uint32_t counter_xfer_set = 0;
+uint32_t counter_xfer_ready = 0;
+
+
 static void nowait_io_handler(unsigned long  cb_hndl, int err)
 {
     struct xdma_cdev *xcdev;
@@ -436,6 +440,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 		pr_err("Invalid vcam_out_buffer struct\n");
 		return;
 	}
+    counter_xfer_ready++;
 
 	xcdev = (struct xdma_cdev *)caio->iocb->ki_filp->private_data;
 	rv = xcdev_check(__func__, xcdev, 1);
@@ -459,7 +464,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     dev = 
     pr_info("nowait_io_handler\n");
 
-    spin_lock_irqsave(&dev->out_q_slock, flags);
+    //spin_lock_irqsave(&dev->out_q_slock, flags);
     if (!err)
     numbytes = xdma_xfer_completion((void *)cb, xdev,
             engine->channel, cb->write, cb->ep_addr,
@@ -477,7 +482,8 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     
         vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     }
-    spin_unlock_irqrestore(&dev->out_q_slock, flags);
+    //spin_unlock_irqrestore(&dev->out_q_slock, flags);
+    pr_info("counter_xfer_set %d\n", counter_xfer_set);
 
     
     
@@ -582,9 +588,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     w = 0x00;
     iowrite32(w, reg+0x90);
 
-    spin_lock_irqsave(&dev->out_q_slock, flags);  
+    //spin_lock_irqsave(&dev->out_q_slock, flags);  
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
-    spin_unlock_irqrestore(&dev->out_q_slock, flags);
+    //spin_unlock_irqrestore(&dev->out_q_slock, flags);
     pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
     struct scatterlist *sg = vbuf_sgt->sgl;
 
@@ -640,6 +646,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 					(u64)pos, vbuf_sgt,
 					1, c2h_timeout * 1000);
 
+    counter_xfer_set++;
+    pr_info("counter_xfer_set %d\n", counter_xfer_set);
     //if (start_video >= 3)
     {
     w = 0x01;
