@@ -474,7 +474,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 
 
   
-    pr_info("vb state %d\n", buf->vb.state);
+    //pr_info("vb state %d\n", buf->vb.state);
 
     if (buf->vb.state == 5)
     {
@@ -483,7 +483,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
         vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     }
     //spin_unlock_irqrestore(&dev->out_q_slock, flags);
-    pr_info("counter_xfer_ready %d\n", counter_xfer_ready);
+    //pr_info("counter_xfer_ready %d\n", counter_xfer_ready);
 
     
     
@@ -591,7 +591,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
 
-    pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
+    //pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
     struct scatterlist *sg = vbuf_sgt->sgl;
 
     memcpy((void*)&cb->sgt, (void*)vbuf_sgt, sizeof(struct sg_table));
@@ -647,8 +647,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 					1, c2h_timeout * 1000);
 
     counter_xfer_set++;
-    pr_info("counter_xfer_set %d\n", counter_xfer_set);
-    //if (start_video >= 3)
+    //pr_info("counter_xfer_set %d\n", counter_xfer_set);
+    if (start_video >= 3)
     {
     w = 0x01;
     iowrite32(w, reg+0x10);
@@ -656,14 +656,15 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     iowrite32(w, reg+0x80);
     }
 
-    
+
+    #ifdef __VERBOSE_DEBUG__
         
     sg = vbuf_sgt->sgl;
     pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
     vbuf_sgt->orig_nents, sg_virt(sg));
 
 
-    #ifdef __VERBOSE_DEBUG__
+    
         for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
         {
             pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
