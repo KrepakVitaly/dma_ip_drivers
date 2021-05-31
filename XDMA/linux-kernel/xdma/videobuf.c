@@ -207,13 +207,13 @@ int vcam_out_videobuf2_setup(struct vcam_device *dev)
     struct vb2_queue *q = &dev->vb_out_vidq;
 
     q->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    q->io_modes = VB2_MMAP;// | VB2_USERPTR | VB2_READ | VB2_WRITE;
+    q->io_modes = VB2_MMAP | VB2_USERPTR | VB2_READ | VB2_WRITE;
     q->drv_priv = dev;
     q->buf_struct_size = sizeof(struct vcam_out_buffer);
     q->timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
     q->ops = &vcam_vb2_ops;
     q->mem_ops = &vb2_dma_sg_memops;
-    q->min_buffers_needed = 4;
+    q->min_buffers_needed = 8;
     q->lock = &dev->vcam_mutex;
 
     return vb2_queue_init(q);

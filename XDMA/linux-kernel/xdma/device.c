@@ -549,7 +549,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	caio->req_cnt = 1;
     
 
-    cb->buf = NULL;//kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
+    cb->buf = kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
     cb->len = 921600;
     cb->ep_addr = (u64)pos;
     cb->write = false;
@@ -650,10 +650,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     //pr_info("counter_xfer_set %d\n", counter_xfer_set);
     if (start_video >= 3)
     {
-    w = 0x01;
-    iowrite32(w, reg+0x10);
-    w = 0x01;
-    iowrite32(w, reg+0x80);
+        w = 0x01;
+        iowrite32(w, reg+0x10);
+        w = 0x01;
+        iowrite32(w, reg+0x80);
     }
 
 
@@ -892,6 +892,10 @@ int submitter_thread(void *data)
 
     }
 
+    w = 0x00;
+    iowrite32(w, reg+0x94);
+    w = 0x00;
+    iowrite32(w, reg+0x90);
     w = 0x01;
     iowrite32(w, reg+0x90);
     w = 0x00;
