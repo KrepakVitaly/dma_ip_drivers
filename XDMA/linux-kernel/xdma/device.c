@@ -922,7 +922,7 @@ int submitter_thread(void *data)
             {
                 start_video =  7;
                 //schedule_timeout_interruptible(timeout - computation_time_jiff);
-                schedule_timeout_interruptible(1);
+                //schedule_timeout_interruptible(1);
             }
         }
         
