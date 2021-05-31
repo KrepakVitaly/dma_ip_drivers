@@ -527,7 +527,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	caio->req_cnt = 1;
     
 
-    cb->buf = kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
+    cb->buf = NULL;//kzalloc(921600 * (sizeof(uint8_t)), GFP_KERNEL);
     cb->len = 921600;
     cb->ep_addr = (u64)pos;
     cb->write = false;
