@@ -160,7 +160,7 @@ static void vcam_stop_streaming(struct vb2_queue *vb2_q)
     pr_info("counter_xfer_set %d \n", counter_xfer_set);
     while (counter_xfer_ready != counter_xfer_set)
     {
-        
+        schedule_timeout_interruptible(20);
     }
     pr_info("counter_xfer_ready2 %d \n", counter_xfer_ready);
     pr_info("counter_xfer_set2 %d \n", counter_xfer_set);
