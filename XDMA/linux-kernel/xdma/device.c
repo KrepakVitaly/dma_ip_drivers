@@ -599,6 +599,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 					1, c2h_timeout * 1000);
 
     
+    if (start_video == 2)
     {
     w = 0x01;
     iowrite32(w, reg+0x10);
@@ -869,7 +870,7 @@ int submitter_thread(void *data)
         int computation_time_jiff = jiffies;
         spin_lock_irqsave(&dev->out_q_slock, flags);
         if (list_empty(&q->active)) {
-            pr_info("Buffer queue is empty\n");
+            //pr_info("Buffer queue is empty\n");
             spin_unlock_irqrestore(&dev->out_q_slock, flags);
             goto have_a_nap;
         }
@@ -921,7 +922,7 @@ int submitter_thread(void *data)
             {
                 start_video =  7;
                 //schedule_timeout_interruptible(timeout - computation_time_jiff);
-                schedule_timeout_interruptible(2);
+                schedule_timeout_interruptible(1);
             }
         }
         
