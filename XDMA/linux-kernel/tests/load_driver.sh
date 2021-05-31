@@ -58,9 +58,9 @@ else
 fi
 
 
-../tools/reg_rw /dev/xdma0_user 0x20 -w 0x1e0
-../tools/reg_rw /dev/xdma0_user 0x30 -w 0x1e0
-../tools/reg_rw /dev/xdma0_user 0x40 -w 0x32dcd5
+../tools/reg_rw /dev/xdma0_user 0x20 -w 0x3c0
+../tools/reg_rw /dev/xdma0_user 0x30 -w 0x5a0
+../tools/reg_rw /dev/xdma0_user 0x40 -w 0x196e6a
 ../tools/reg_rw /dev/xdma0_user 0x50 -w 0x02
 
 ../tools/reg_rw /dev/xdma0_user 0x60 -w 0x00
@@ -83,7 +83,7 @@ echo "tready signal bind to 1 (camera mode on)"
 ../tools/reg_rw /dev/xdma0_user 0x60 -w 0x00
 
 echo "set freq divider 0xcb735"
-../tools/reg_rw /dev/xdma0_user 0x40 -w 0xcb735
+../tools/reg_rw /dev/xdma0_user 0x40 -w 0x196e6a
 
 
 echo "set pattern with frame counter"
