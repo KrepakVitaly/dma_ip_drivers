@@ -588,9 +588,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     w = 0x00;
     iowrite32(w, reg+0x90);
 
-    //spin_lock_irqsave(&dev->out_q_slock, flags);  
+
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
-    //spin_unlock_irqrestore(&dev->out_q_slock, flags);
+
     pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
     struct scatterlist *sg = vbuf_sgt->sgl;
 
@@ -656,15 +656,14 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     iowrite32(w, reg+0x80);
     }
 
+    
+        
+    sg = vbuf_sgt->sgl;
+    pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
+    vbuf_sgt->orig_nents, sg_virt(sg));
+
+
     #ifdef __VERBOSE_DEBUG__
-        pr_info("xdma_xfer_submit return value %d \n", res);
-
-        sg = vbuf_sgt->sgl;
-        pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
-        vbuf_sgt->orig_nents, sg_virt(sg));
-
-
-
         for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
         {
             pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
@@ -672,6 +671,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
                 sg_dma_len(sg), sg_virt(sg)); 
             pr_info("first value in scatter gather buffer 0x%p, value 0%08x.\n", sg_virt(sg), *((int*)(sg_virt(sg))) );
         }
+        pr_info("xdma_xfer_submit return value %d \n", res);
     #endif
 	if (engine->cmplthp)
 		xdma_kthread_wakeup(engine->cmplthp);
