@@ -412,9 +412,11 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     struct xdma_cdev *xcdev;
 	struct xdma_engine *engine;
 	struct xdma_dev *xdev;
+    unsigned long flags = 0;
 	struct xdma_io_cb *cb = (struct xdma_io_cb *)cb_hndl;
 	struct cdev_async_io *caio = (struct cdev_async_io *)cb->private;
     struct vcam_out_buffer *buf = (struct vcam_out_buffer *) cb->private_videobuf;
+    struct vcam_device *dev = (struct vcam_device *)cb->private_vcam_device;
 	ssize_t numbytes = 0;
 	ssize_t res, res2;
 	int lock_stat;
@@ -454,8 +456,10 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 
 	engine = xcdev->engine;
 	xdev = xcdev->xdev;
+    dev = 
     pr_info("nowait_io_handler\n");
 
+    spin_lock_irqsave(&dev->out_q_slock, flags);
     if (!err)
     numbytes = xdma_xfer_completion((void *)cb, xdev,
             engine->channel, cb->write, cb->ep_addr,
@@ -464,6 +468,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
                     10 * 1000);
 
 
+  
     pr_info("vb state %d\n", buf->vb.state);
 
     if (buf->vb.state == 5)
@@ -472,7 +477,11 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     
         vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     }
+    spin_unlock_irqrestore(&dev->out_q_slock, flags);
+
     
+    
+
     if (cb->buf != NULL)
         kfree(cb->buf);
     if (cb  != NULL)
@@ -499,7 +508,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     struct xdma_cdev *xcdev = dev->xcdev;
 	int rv;
 	ssize_t res = 0;
-
+    unsigned long flags = 0;
     void __iomem *reg;
 	u32 w;
     int i;
@@ -510,6 +519,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     loff_t pos = 0;
     bool write = 0;
     struct kiocb *iocb = kzalloc((sizeof(struct kiocb)), GFP_KERNEL);
+
+
 
 
     caio = kzalloc( (sizeof(struct cdev_async_io)), GFP_KERNEL);
@@ -539,6 +550,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     cb->private = caio;
     cb->io_done = nowait_io_handler;
     cb->private_videobuf = buf;
+    cb->private_vcam_device = dev;
 
 	rv = xcdev_check(__func__, xcdev, 0);
 	if (rv < 0){
@@ -570,7 +582,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     w = 0x00;
     iowrite32(w, reg+0x90);
 
+    spin_lock_irqsave(&dev->out_q_slock, flags);  
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
+    spin_unlock_irqrestore(&dev->out_q_slock, flags);
     pr_info("vb2_dma_sg_plane_desc vbuf_sgt %p \n", vbuf_sgt);
     struct scatterlist *sg = vbuf_sgt->sgl;
 
@@ -890,7 +904,7 @@ int submitter_thread(void *data)
 
         /* Do something and sleep */
         int computation_time_jiff = jiffies;
-        spin_lock_irqsave(&dev->out_q_slock, flags);
+        spin_lock_irqsave(&dev->out_q_slock, flags); 
         if (list_empty(&q->active)) {
             //pr_info("Buffer queue is empty\n");
             spin_unlock_irqrestore(&dev->out_q_slock, flags);
