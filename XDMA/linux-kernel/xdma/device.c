@@ -464,9 +464,14 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
                     10 * 1000);
 
 
-    buf->vb.timestamp = ktime_get_ns();
     pr_info("vb state %d\n", buf->vb.state);
-    vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+
+    if (buf->vb.state == 5)
+    {
+        buf->vb.timestamp = ktime_get_ns();
+    
+        vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
+    }
     
     if (cb->buf != NULL)
         kfree(cb->buf);
