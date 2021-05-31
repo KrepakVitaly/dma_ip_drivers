@@ -4,6 +4,7 @@
 #include <linux/vmalloc.h>
 #include <media/videobuf2-core.h>
 #include <media/videobuf2-dma-sg.h>
+#include "device.h"
 
 #include "videobuf.h"
 #include "xdma_mod.h"
@@ -154,6 +155,12 @@ static void vcam_stop_streaming(struct vb2_queue *vb2_q)
     /* Stop running threads */
     if (dev->sub_thr_id)
         kthread_stop(dev->sub_thr_id);
+
+
+    while (counter_xfer_ready != counter_xfer_set)
+    {
+        
+    }
 
     dev->sub_thr_id = NULL;
     /* Empty buffer queue */

@@ -11,6 +11,10 @@
 #define PIXFMTS_MAX 4
 #define FB_NAME_MAXLENGTH 16
 
+
+extern uint32_t counter_xfer_set;
+extern uint32_t counter_xfer_ready;
+
 struct vcam_in_buffer {
     void *data;
     size_t filled;
