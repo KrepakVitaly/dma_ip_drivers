@@ -483,7 +483,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
         vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
     }
     //spin_unlock_irqrestore(&dev->out_q_slock, flags);
-    pr_info("counter_xfer_set %d\n", counter_xfer_set);
+    pr_info("counter_xfer_ready %d\n", counter_xfer_ready);
 
     
     
