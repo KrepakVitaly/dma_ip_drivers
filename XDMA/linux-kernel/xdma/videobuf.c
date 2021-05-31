@@ -163,7 +163,7 @@ static void vcam_stop_streaming(struct vb2_queue *vb2_q)
             list_entry(q->active.next, struct vcam_out_buffer, list);
         list_del(&buf->list);
         vb2_buffer_done(&buf->vb, VB2_BUF_STATE_ERROR);
-        pr_debug("Throwing out buffer\n");
+        pr_info("Throwing out buffer\n");
     }
     spin_unlock_irqrestore(&dev->out_q_slock, flags);
 }
