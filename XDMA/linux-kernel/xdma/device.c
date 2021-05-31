@@ -449,7 +449,7 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 
 	engine = xcdev->engine;
 	xdev = xcdev->xdev;
-    pr_info("nowait_io_handler\n");
+    //pr_info("nowait_io_handler\n");
 
     if (!err)
     numbytes = xdma_xfer_completion((void *)cb, xdev,
@@ -551,7 +551,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     dbg_sg("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x84, w);
 
     w = ioread32(reg+0x94);
-    pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, w);
+    //pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, w);
 
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
