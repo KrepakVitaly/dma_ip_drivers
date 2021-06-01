@@ -576,6 +576,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
    
     tready_status = ioread32(reg+0x94);
     pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, tready_status);
+    w = 0x01;
+    iowrite32(w, reg+0x90);
+    w = 0x00;
+    iowrite32(w, reg+0x90);
 
     if (tready_status == 0x03) //tready fall in error way
     {
@@ -590,14 +594,11 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
             w = 0x01;
             iowrite32(w, reg+0x80);
             start_video = 0;
-            pr_info("%s reset camera after tready status == 0x03\n", __func__);
+            pr_info("%s reset camera after tready status == 0x03, now its \n", __func__);
         }
     }
     
-    w = 0x01;
-    iowrite32(w, reg+0x90);
-    w = 0x00;
-    iowrite32(w, reg+0x90);
+
 
 
 
