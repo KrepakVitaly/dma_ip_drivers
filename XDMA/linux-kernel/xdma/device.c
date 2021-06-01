@@ -666,7 +666,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 					1, c2h_timeout * 1000);
 
     counter_xfer_set++;
-    //pr_info("counter_xfer_set %d\n", counter_xfer_set);
+    pr_info("counter_xfer_set %d\n", counter_xfer_set);
     if (start_video >= 3)
     {
         w = 0x01;
