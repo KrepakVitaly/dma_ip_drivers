@@ -585,6 +585,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     {
         if (counter_xfer_set != counter_xfer_ready)
         {
+            pr_info("%s tready_status ==  %d, counter_xfer_set == %d, counter_xfer_ready == %d,\n", __func__, tready_status, counter_xfer_set, counter_xfer_ready);
             return; // wait for all set transfers ready
         }
         else
@@ -594,7 +595,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
             w = 0x01;
             iowrite32(w, reg+0x80);
             start_video = 0;
-            pr_info("%s reset camera after tready status == 0x03, now its \n", __func__);
+            pr_info("%s reset camera after tready status == 0x03, now its value\n", __func__);
+            //return;
         }
     }
     
