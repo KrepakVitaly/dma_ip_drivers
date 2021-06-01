@@ -589,11 +589,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
             iowrite32(w, reg+0x10);
             w = 0x01;
             iowrite32(w, reg+0x80);
+            start_video = 0;
             pr_info("%s reset camera after tready status == 0x03\n", __func__);
-            w = 0x01;
-            iowrite32(w, reg+0x10);
-            w = 0x01;
-            iowrite32(w, reg+0x80);
         }
     }
     
