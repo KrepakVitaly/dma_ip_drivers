@@ -577,6 +577,8 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     tready_status = ioread32(reg+0x94);
     pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, tready_status);
     w = 0x00;
+    iowrite32(w, reg+0x94)
+    w = 0x00;
     iowrite32(w, reg+0x90);
     w = 0x01;
     iowrite32(w, reg+0x90);
@@ -597,7 +599,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
             w = 0x01;
             iowrite32(w, reg+0x80);
             start_video = 0;
-            pr_info("%s reset camera after tready status == 0x03, now its value\n", __func__);
+            pr_info("%s reset camera after tready status == 0x03, now its value \n", __func__);
             //return;
         }
     }
@@ -641,10 +643,10 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
     //sgt_dump(vbuf_sgt);
 
-    #ifdef __VERBOSE_DEBUG__
+    
         pr_info("vbuf_sgt 0x%p, sgl 0x%p, nents %u/%u. sg_virt 0x%p\n", vbuf_sgt, vbuf_sgt->sgl, vbuf_sgt->nents,
             vbuf_sgt->orig_nents, sg_virt(sg));
-
+    #ifdef __VERBOSE_DEBUG__
         for (i = 0; i < vbuf_sgt->orig_nents; i++, sg = sg_next(sg))
         {
             pr_info("%d, 0x%p, pg 0x%p,%u+%u, dma 0x%llx,%u. sg_virt 0x%p\n", i, sg,
