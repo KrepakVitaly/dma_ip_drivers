@@ -485,9 +485,6 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
     //spin_unlock_irqrestore(&dev->out_q_slock, flags);
     //pr_info("counter_xfer_ready %d\n", counter_xfer_ready);
 
-    
-    
-
     if (cb->buf != NULL)
         kfree(cb->buf);
     if (cb  != NULL)
@@ -516,6 +513,7 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 	ssize_t res = 0;
     unsigned long flags = 0;
     void __iomem *reg;
+    uint32_t tready_status = 0;
 	u32 w;
     int i;
     struct xdma_dev *xdev = xcdev->xdev;
@@ -526,9 +524,6 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     bool write = 0;
     struct kiocb *iocb = kzalloc((sizeof(struct kiocb)), GFP_KERNEL);
 
-
-
-
     caio = kzalloc( (sizeof(struct cdev_async_io)), GFP_KERNEL);
 
     memset(caio, 0, sizeof(struct cdev_async_io));
@@ -536,7 +531,6 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
     iocb->ki_filp = kzalloc( (sizeof(struct file)), GFP_KERNEL);
 	iocb->ki_filp->private_data = xcdev;
 
-    
 
     struct xdma_io_cb * cb = kzalloc(count * (sizeof(struct xdma_io_cb)), GFP_KERNEL);
 
@@ -580,13 +574,34 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
 
    
-    w = ioread32(reg+0x94);
-    pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, w);
+    tready_status = ioread32(reg+0x94);
+    pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, tready_status);
+
+    if (tready_status == 0x03) //tready fall in error way
+    {
+        if (counter_xfer_set != counter_xfer_ready)
+        {
+            return; // wait for all set transfers ready
+        }
+        else
+        {
+            w = 0x00;
+            iowrite32(w, reg+0x10);
+            w = 0x01;
+            iowrite32(w, reg+0x80);
+            pr_info("%s reset camera after tready status == 0x03\n", __func__);
+            w = 0x01;
+            iowrite32(w, reg+0x10);
+            w = 0x01;
+            iowrite32(w, reg+0x80);
+        }
+    }
     
     w = 0x01;
     iowrite32(w, reg+0x90);
     w = 0x00;
     iowrite32(w, reg+0x90);
+
 
 
     struct sg_table * vbuf_sgt = vb2_dma_sg_plane_desc(&buf->vb, 0);
