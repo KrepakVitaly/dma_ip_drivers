@@ -461,8 +461,8 @@ static void nowait_io_handler(unsigned long  cb_hndl, int err)
 
 	engine = xcdev->engine;
 	xdev = xcdev->xdev;
-    dev = 
-    pr_info("nowait_io_handler\n");
+
+    //pr_info("nowait_io_handler\n");
 
     //spin_lock_irqsave(&dev->out_q_slock, flags);
     if (!err)
@@ -581,7 +581,9 @@ static void submit_noinput_sg_buffer(struct vcam_out_buffer *buf,
 
    
     w = ioread32(reg+0x94);
-    pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, w);
+    #ifdef __VERBOSE_DEBUG__
+        pr_info("%s(@%p, count=%ld, pos=0x%02x) value = 0x%08x\n", __func__, reg, (long)4, (int)0x94, w);
+    #endif
     
     w = 0x01;
     iowrite32(w, reg+0x90);
